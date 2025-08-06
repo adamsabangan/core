@@ -3,91 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AS Access</title>
+  <title>AS Proximity Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
-
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #000;
+      background-color: black;
+      color: #555;
       font-family: 'Lexend', sans-serif;
-      color: #444;
       height: 100vh;
-      width: 100vw;
       overflow: hidden;
       display: flex;
-      align-items: center;
-      justify-content: center;
       flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
     #logo {
-      width: min(60vmin, 400px);
-      height: auto;
-      transition: opacity 0.5s ease-in-out;
-      pointer-events: none;
-      user-select: none;
+      max-width: 50vw;
+      max-height: 50vh;
+      transition: opacity 1s ease-in-out;
     }
 
-    .footer {
+    footer {
       position: absolute;
-      bottom: 1rem;
-      width: 100%;
+      bottom: 20px;
       text-align: center;
-      font-size: 0.7rem;
-      color: #444;
-      font-family: 'Lexend', sans-serif;
+      font-size: 0.8em;
+      line-height: 1.4;
       text-transform: uppercase;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <img id="logo" src="logo.png" alt="AS Logo" />
-  <div class="footer">
+  <img id="logo" src="AS%20Proximity.001.png" alt="AS Logo" />
+  <footer>
     © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
     UNAUTHORIZED USE STRICTLY PROHIBITED.
-  </div>
+  </footer>
 
   <script>
     const logo = document.getElementById("logo");
     let attempts = 0;
 
-    async function checkAccess() {
-      try {
-        const res = await fetch("https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f");
-        const data = await res.json();
+    function checkAccess() {
+      fetch("https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f?cb=" + new Date().getTime())
+        .then((response) => response.json())
+        .then((data) => {
+          if (data?.record?.access_granted === true) {
+            window.location.href = "https://core.adamsabangan.com/dashboard";
+          }
+        })
+        .catch((err) => console.error("Fetch error:", err));
+    }
 
-        if (data.record.accessGranted === true) {
-          window.location.href = "https://core.adamsabangan.com/dashboard";
-          return;
-        }
+    function startChecking() {
+      checkAccess();
 
+      const interval = setInterval(() => {
         attempts++;
 
+        if (attempts <= 10) {
+          checkAccess();
+        } else if (attempts <= 30 && attempts % 3 === 0) {
+          checkAccess();
+        }
+
         if (attempts === 25) {
-          // At 25s, change logo to warning version
           logo.style.opacity = 0;
           setTimeout(() => {
             logo.src = "logowarning.png";
             logo.style.opacity = 1;
-          }, 500);
+          }, 1000);
         }
 
-        if (attempts >= 30) {
+        if (attempts === 30) {
+          clearInterval(interval);
           window.location.href = "https://id.adamsabangan.com/timeout";
-          return;
         }
-
-        const delay = attempts < 10 ? 1000 : 3000;
-        setTimeout(checkAccess, delay);
-      } catch (e) {
-        console.error("JSON check error:", e);
-        setTimeout(checkAccess, 3000);
-      }
+      }, 1000);
     }
 
-    checkAccess();
+    window.onload = startChecking;
   </script>
 </body>
 </html>
