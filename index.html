@@ -3,85 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AS Proximity</title>
+  <title>ID Portal</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background-color: black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      height: 100%;
       overflow: hidden;
-      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #logo-wrapper {
+      transition: opacity 1s ease;
     }
 
     img {
       max-width: 80%;
       max-height: 80%;
-      transition: opacity 1s ease-in-out;
-    }
-
-    .logo {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      font-size: 0.75rem;
-      color: #444;
     }
   </style>
 </head>
 <body>
-  <img id="mainImage" src="logo.png" alt="AS Logo" />
+  <div id="logo-wrapper">
+    <img id="main-logo" src="logo.png" alt="AS Logo" />
+  </div>
 
   <script>
-    const CHECK_TIMEOUT = 30000; // 30 sec
-    const WARNING_TIME = 25000;  // 25 sec
-    const REDIRECT_SUCCESS = "https://core.adamsabangan.com/dashboard";
-    const REDIRECT_TIMEOUT = "/timeout";
-    const JSON_URL = "https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f";
+    const JSON_BIN_URL = 'https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f';
+    const redirectSuccess = 'https://core.adamsabangan.com/dashboard';
+    const redirectFail = 'https://id.adamsabangan.com/timeout';
 
-    const image = document.getElementById("mainImage");
+    const logo = document.getElementById('main-logo');
+    const wrapper = document.getElementById('logo-wrapper');
 
-    let redirected = false;
-
-    async function checkAccess() {
-      try {
-        const response = await fetch(JSON_URL, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-
-        const data = await response.json();
-        if (data.record && data.record.access_granted === true) {
-          redirected = true;
-          window.location.href = REDIRECT_SUCCESS;
-        }
-      } catch (err) {
-        // Fail silently
-      }
-    }
-
-    // Check every 2 seconds for 30 seconds
-    const interval = setInterval(checkAccess, 2000);
-    
-    // Switch image at 25 seconds
+    // At 25s, fade out then swap logo to warning
     setTimeout(() => {
-      image.style.opacity = 0;
+      wrapper.style.opacity = 0;
       setTimeout(() => {
-        image.src = "logowarning.png";
-        image.style.opacity = 1;
+        logo.src = 'logowarning.png';
+        wrapper.style.opacity = 1;
       }, 1000);
-    }, WARNING_TIME);
+    }, 25000);
 
-    // Stop checking after 30 seconds
+    // At 30s, check JSON and redirect
     setTimeout(() => {
-      clearInterval(interval);
-      if (!redirected) window.location.href = REDIRECT_TIMEOUT;
-    }, CHECK_TIMEOUT);
+      fetch(JSON_BIN_URL)
+        .then(response => response.json())
+        .then(data => {
+          if (data?.record?.access_granted === true) {
+            window.location.href = redirectSuccess;
+          } else {
+            window.location.href = redirectFail;
+          }
+        })
+        .catch(() => {
+          window.location.href = redirectFail;
+        });
+    }, 30000);
   </script>
 </body>
 </html>
