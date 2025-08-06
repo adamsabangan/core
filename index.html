@@ -3,66 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Access Portal</title>
+  <title>AS Proximity</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
-
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #000;
-      color: #333;
-      font-family: 'Lexend', sans-serif;
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
-      position: relative;
+      background-color: black;
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
     }
 
     img {
-      width: 50vw;
-      max-width: 400px;
-      height: auto;
+      max-width: 80%;
+      max-height: 80%;
+      transition: opacity 1s ease-in-out;
     }
 
-    .copyright {
+    .logo {
       position: absolute;
-      bottom: 1rem;
-      width: 100%;
-      text-align: center;
+      bottom: 12px;
+      left: 12px;
+      font-size: 0.75rem;
       color: #444;
-      font-size: 0.7rem;
     }
   </style>
 </head>
 <body>
-  <img src="logo.png" alt="AS Logo" />
-  <div class="copyright">
-    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
-    UNAUTHORIZED USE STRICTLY PROHIBITED.
-  </div>
+  <img id="mainImage" src="logo.png" alt="AS Logo" />
 
   <script>
+    const CHECK_TIMEOUT = 30000; // 30 sec
+    const WARNING_TIME = 25000;  // 25 sec
+    const REDIRECT_SUCCESS = "https://core.adamsabangan.com/dashboard";
+    const REDIRECT_TIMEOUT = "/timeout";
+    const JSON_URL = "https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f";
+
+    const image = document.getElementById("mainImage");
+
+    let redirected = false;
+
     async function checkAccess() {
       try {
-        const res = await fetch("https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f");
-        const data = await res.json();
-        if (data.record.access_granted === true) {
-          window.location.href = "https://core.adamsabangan.com/dashboard";
-        } else {
-          setTimeout(checkAccess, 1000);
+        const response = await fetch(JSON_URL, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+
+        const data = await response.json();
+        if (data.record && data.record.access_granted === true) {
+          redirected = true;
+          window.location.href = REDIRECT_SUCCESS;
         }
       } catch (err) {
-        console.error("Error checking access:", err);
-        setTimeout(checkAccess, 2000);
+        // Fail silently
       }
     }
 
-    checkAccess();
+    // Check every 2 seconds for 30 seconds
+    const interval = setInterval(checkAccess, 2000);
+    
+    // Switch image at 25 seconds
+    setTimeout(() => {
+      image.style.opacity = 0;
+      setTimeout(() => {
+        image.src = "logowarning.png";
+        image.style.opacity = 1;
+      }, 1000);
+    }, WARNING_TIME);
+
+    // Stop checking after 30 seconds
+    setTimeout(() => {
+      clearInterval(interval);
+      if (!redirected) window.location.href = REDIRECT_TIMEOUT;
+    }, CHECK_TIMEOUT);
   </script>
 </body>
 </html>
