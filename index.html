@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ID Portal</title>
+  <title>AS Proximity Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap" rel="stylesheet">
   <style>
     html, body {
       margin: 0;
@@ -12,57 +13,102 @@
       height: 100%;
       overflow: hidden;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      font-family: 'Lexend', sans-serif;
+      color: #555;
     }
 
-    #logo-wrapper {
-      transition: opacity 1s ease;
-    }
-
-    img {
+    #logo-container {
+      position: relative;
       max-width: 80%;
       max-height: 80%;
+    }
+
+    .logo-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: auto;
+      opacity: 1;
+      transition: opacity 0.8s ease-in-out;
+    }
+
+    #warning {
+      opacity: 0;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.75rem;
+      color: #444;
+      text-align: center;
+      line-height: 1.4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
-  <div id="logo-wrapper">
-    <img id="main-logo" src="logo.png" alt="AS Logo" />
+  <div id="logo-container">
+    <img id="main" class="logo-img" src="logo.png" alt="AS Logo">
+    <img id="warning" class="logo-img" src="logowarning.png" alt="Warning Logo">
   </div>
 
+  <footer>
+    © 2025 Adam Sabangan. All rights reserved.<br>
+    Unauthorized use strictly prohibited.
+  </footer>
+
   <script>
-    const JSON_BIN_URL = 'https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f';
-    const redirectSuccess = 'https://core.adamsabangan.com/dashboard';
-    const redirectFail = 'https://id.adamsabangan.com/timeout';
+    const main = document.getElementById('main');
+    const warning = document.getElementById('warning');
 
-    const logo = document.getElementById('main-logo');
-    const wrapper = document.getElementById('logo-wrapper');
+    let seconds = 0;
+    const totalDuration = 30 * 1000;
+    let interval;
 
-    // At 25s, fade out then swap logo to warning
-    setTimeout(() => {
-      wrapper.style.opacity = 0;
-      setTimeout(() => {
-        logo.src = 'logowarning.png';
-        wrapper.style.opacity = 1;
-      }, 1000);
-    }, 25000);
-
-    // At 30s, check JSON and redirect
-    setTimeout(() => {
-      fetch(JSON_BIN_URL)
-        .then(response => response.json())
+    function checkAccess() {
+      fetch('https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f/latest')
+        .then(res => res.json())
         .then(data => {
-          if (data?.record?.access_granted === true) {
-            window.location.href = redirectSuccess;
-          } else {
-            window.location.href = redirectFail;
+          const access = data.record.access_granted;
+          if (access === true) {
+            window.location.href = 'https://core.adamsabangan.com/dashboard';
           }
         })
-        .catch(() => {
-          window.location.href = redirectFail;
+        .catch(err => {
+          console.error('Fetch error:', err);
         });
-    }, 30000);
+    }
+
+    function schedulePolling() {
+      interval = setInterval(() => {
+        checkAccess();
+        seconds++;
+        if (seconds >= 10) {
+          clearInterval(interval);
+          interval = setInterval(() => {
+            seconds += 3;
+            checkAccess();
+            if (seconds >= 25) {
+              main.style.opacity = 0;
+              warning.style.opacity = 1;
+            }
+            if (seconds >= 30) {
+              clearInterval(interval);
+              window.location.href = 'https://id.adamsabangan.com/timeout';
+            }
+          }, 3000);
+        }
+      }, 1000);
+    }
+
+    schedulePolling();
+    checkAccess();
   </script>
 </body>
 </html>
