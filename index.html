@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access Portal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #333;
+      font-family: 'Lexend', sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    img {
+      width: 50vw;
+      max-width: 400px;
+      height: auto;
+    }
+
+    .copyright {
+      position: absolute;
+      bottom: 1rem;
+      width: 100%;
+      text-align: center;
+      color: #444;
+      font-size: 0.7rem;
+    }
+  </style>
+</head>
+<body>
+  <img src="logo.png" alt="AS Logo" />
+  <div class="copyright">
+    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
+    UNAUTHORIZED USE STRICTLY PROHIBITED.
+  </div>
+
+  <script>
+    async function checkAccess() {
+      try {
+        const res = await fetch("https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f");
+        const data = await res.json();
+        if (data.record.access_granted === true) {
+          window.location.href = "https://core.adamsabangan.com/dashboard";
+        } else {
+          setTimeout(checkAccess, 1000);
+        }
+      } catch (err) {
+        console.error("Error checking access:", err);
+        setTimeout(checkAccess, 2000);
+      }
+    }
+
+    checkAccess();
+  </script>
+</body>
+</html>
