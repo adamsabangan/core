@@ -3,46 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AS Proximity Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap" rel="stylesheet">
+  <title>Proximity Portal</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
+
     html, body {
       margin: 0;
       padding: 0;
-      background-color: black;
-      color: #555;
+      background-color: #000;
       font-family: 'Lexend', sans-serif;
+      color: #444;
       height: 100vh;
+      width: 100vw;
       overflow: hidden;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
 
     #logo {
-      max-width: 50vw;
-      max-height: 50vh;
+      width: min(60vmin, 400px);
+      height: auto;
       transition: opacity 1s ease-in-out;
     }
 
-    footer {
+    .footer {
       position: absolute;
-      bottom: 20px;
+      bottom: 1rem;
+      width: 100%;
       text-align: center;
-      font-size: 0.8em;
-      line-height: 1.4;
+      font-size: 0.7rem;
+      color: #444;
+      font-family: 'Lexend', sans-serif;
       text-transform: uppercase;
-      color: #555;
     }
   </style>
 </head>
 <body>
-  <img id="logo" src="AS%20Proximity.001.png" alt="AS Logo" />
-  <footer>
+  <img id="logo" src="logo.png" alt="Waiting for badge tap" />
+  <div class="footer">
     © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
     UNAUTHORIZED USE STRICTLY PROHIBITED.
-  </footer>
+  </div>
 
   <script>
     const logo = document.getElementById("logo");
