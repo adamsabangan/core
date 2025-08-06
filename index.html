@@ -3,111 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AS Proximity Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap" rel="stylesheet">
+  <title>AS Access</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
+
     html, body {
       margin: 0;
       padding: 0;
-      background-color: black;
-      height: 100%;
+      background-color: #000;
+      font-family: 'Lexend', sans-serif;
+      color: #444;
+      height: 100vh;
+      width: 100vw;
       overflow: hidden;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
-      font-family: 'Lexend', sans-serif;
-      color: #555;
+      justify-content: center;
+      flex-direction: column;
     }
 
-    #logo-container {
-      position: relative;
-      max-width: 80%;
-      max-height: 80%;
-    }
-
-    .logo-img {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
+    #logo {
+      width: min(60vmin, 400px);
       height: auto;
-      opacity: 1;
-      transition: opacity 0.8s ease-in-out;
+      transition: opacity 0.5s ease-in-out;
+      pointer-events: none;
+      user-select: none;
     }
 
-    #warning {
-      opacity: 0;
-    }
-
-    footer {
+    .footer {
       position: absolute;
-      bottom: 10px;
-      font-size: 0.75rem;
-      color: #444;
+      bottom: 1rem;
+      width: 100%;
       text-align: center;
-      line-height: 1.4;
+      font-size: 0.7rem;
+      color: #444;
+      font-family: 'Lexend', sans-serif;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-weight: 500;
     }
   </style>
 </head>
 <body>
-  <div id="logo-container">
-    <img id="main" class="logo-img" src="logo.png" alt="AS Logo">
-    <img id="warning" class="logo-img" src="logowarning.png" alt="Warning Logo">
+  <img id="logo" src="logo.png" alt="AS Logo" />
+  <div class="footer">
+    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
+    UNAUTHORIZED USE STRICTLY PROHIBITED.
   </div>
 
-  <footer>
-    © 2025 Adam Sabangan. All rights reserved.<br>
-    Unauthorized use strictly prohibited.
-  </footer>
-
   <script>
-    const main = document.getElementById('main');
-    const warning = document.getElementById('warning');
+    const logo = document.getElementById("logo");
+    let attempts = 0;
 
-    let seconds = 0;
-    const totalDuration = 30 * 1000;
-    let interval;
+    async function checkAccess() {
+      try {
+        const res = await fetch("https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f");
+        const data = await res.json();
 
-    function checkAccess() {
-      fetch('https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f/latest')
-        .then(res => res.json())
-        .then(data => {
-          const access = data.record.access_granted;
-          if (access === true) {
-            window.location.href = 'https://core.adamsabangan.com/dashboard';
-          }
-        })
-        .catch(err => {
-          console.error('Fetch error:', err);
-        });
-    }
-
-    function schedulePolling() {
-      interval = setInterval(() => {
-        checkAccess();
-        seconds++;
-        if (seconds >= 10) {
-          clearInterval(interval);
-          interval = setInterval(() => {
-            seconds += 3;
-            checkAccess();
-            if (seconds >= 25) {
-              main.style.opacity = 0;
-              warning.style.opacity = 1;
-            }
-            if (seconds >= 30) {
-              clearInterval(interval);
-              window.location.href = 'https://id.adamsabangan.com/timeout';
-            }
-          }, 3000);
+        if (data.record.accessGranted === true) {
+          window.location.href = "https://core.adamsabangan.com/dashboard";
+          return;
         }
-      }, 1000);
+
+        attempts++;
+
+        if (attempts === 25) {
+          // At 25s, change logo to warning version
+          logo.style.opacity = 0;
+          setTimeout(() => {
+            logo.src = "logowarning.png";
+            logo.style.opacity = 1;
+          }, 500);
+        }
+
+        if (attempts >= 30) {
+          window.location.href = "https://id.adamsabangan.com/timeout";
+          return;
+        }
+
+        const delay = attempts < 10 ? 1000 : 3000;
+        setTimeout(checkAccess, delay);
+      } catch (e) {
+        console.error("JSON check error:", e);
+        setTimeout(checkAccess, 3000);
+      }
     }
 
-    schedulePolling();
     checkAccess();
   </script>
 </body>
