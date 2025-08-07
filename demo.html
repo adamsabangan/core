@@ -25,7 +25,12 @@
     #logo {
       width: min(60vmin, 400px);
       height: auto;
-      transition: opacity 1s ease-in-out;
+      transition: opacity 1s ease-in-out, transform 0.3s ease-in-out;
+      cursor: pointer;
+    }
+
+    #logo:hover {
+      transform: scale(1.05);
     }
 
     .footer {
@@ -41,7 +46,7 @@
   </style>
 </head>
 <body>
-  <img id="logo" src="logo.png" alt="Demo waiting screen" />
+  <img id="logo" src="logo.png" alt="Demo waiting screen" onclick="window.location.href='https://id.adamsabangan.com/demotimeout'" />
   <div class="footer">
     © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
     UNAUTHORIZED USE STRICTLY PROHIBITED.
@@ -59,7 +64,7 @@
     }, 10000); // switch image at 10s
 
     setTimeout(() => {
-      window.location.href = "https://id.adamsabangan.com/demotimeout";
+      window.location.href = "https://core.adamsabangan.com/dashboard";
     }, 15000); // redirect at 15s
   </script>
 </body>
