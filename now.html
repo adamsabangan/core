@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proximity Link Drop</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      font-family: 'Lexend', sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    #logo {
+      width: min(60vmin, 400px);
+      height: auto;
+      transition: opacity 0.5s ease-in-out, transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    #logo:hover {
+      opacity: 0.8;
+      transform: scale(1.01);
+    }
+
+    #status {
+      margin-top: 1.5rem;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 500;
+      font-size: 1.1rem;
+      color: #fff;
+      text-align: center;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 1rem;
+      width: 100%;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #444;
+      font-family: 'Lexend', sans-serif;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="scan1.png" alt="Logo" />
+  <div id="status">Ready to receive data.</div>
+
+  <div class="footer">
+    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
+    UNAUTHORIZED USE STRICTLY PROHIBITED.
+  </div>
+
+  <script>
+    const logo = document.getElementById("logo");
+    const status = document.getElementById("status");
+
+    const JSON_URL = "https://api.jsonbin.io/v3/b/6894d732203a8b52b5e0f698";
+    const DEFAULT_VALUE = "X";
+
+    const SCAN_IMAGES = ["scan1.png", "scan2.png", "scan3.png"];
+    const TAP_IMAGE = "tap.png";
+    const RECEIVED_IMAGE = "received.png";
+
+    let polling = false;
+    let frameIndex = 0;
+    let scanInterval;
+    let checkInterval;
+
+    function fadeToImage(newSrc) {
+      logo.style.opacity = 0;
+      setTimeout(() => {
+        logo.src = newSrc;
+        logo.style.opacity = 1;
+      }, 250);
+    }
+
+    function startAnimationLoop() {
+      scanInterval = setInterval(() => {
+        frameIndex = (frameIndex + 1) % SCAN_IMAGES.length;
+        fadeToImage(SCAN_IMAGES[frameIndex]);
+      }, 1000);
+    }
+
+    function stopAnimationLoop() {
+      clearInterval(scanInterval);
+    }
+
+    function redirectToURL(url) {
+      fadeToImage(RECEIVED_IMAGE);
+      status.textContent = "Data received. Redirecting now.";
+      setTimeout(() => {
+        window.location.href = url;
+      }, 2000);
+    }
+
+    function checkForURLAndRedirect() {
+      fetch(JSON_URL + "?cb=" + new Date().getTime())
+        .then((res) => res.json())
+        .then((data) => {
+          const url = data?.record?.url;
+          if (url && url !== DEFAULT_VALUE) {
+            stopAnimationLoop();
+            clearInterval(checkInterval);
+            polling = false;
+            redirectToURL(url);
+          }
+        })
+        .catch((err) => console.error("Fetch error:", err));
+    }
+
+    function startPolling(duration = 15000) {
+      polling = true;
+      status.textContent = "Ready to receive data.";
+      frameIndex = 0;
+      logo.src = SCAN_IMAGES[frameIndex];
+      startAnimationLoop();
+
+      const start = Date.now();
+
+      checkInterval = setInterval(() => {
+        const elapsed = Date.now() - start;
+        if (elapsed >= duration) {
+          clearInterval(checkInterval);
+          stopAnimationLoop();
+          polling = false;
+          fadeToImage(TAP_IMAGE);
+          status.textContent = "Tap to scan for data.";
+        } else {
+          checkForURLAndRedirect();
+        }
+      }, 1000);
+    }
+
+    logo.addEventListener("click", () => {
+      if (!polling) {
+        startPolling();
+      }
+    });
+
+    window.onload = () => {
+      startPolling();
+    };
+  </script>
+</body>
+</html>
