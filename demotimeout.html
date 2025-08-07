@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access Expired</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      font-family: 'Lexend', sans-serif;
+      color: #444;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    #logooff {
+      width: min(60vmin, 400px);
+      height: auto;
+      cursor: pointer;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #logooff:hover {
+      transform: scale(1.05);
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 1rem;
+      width: 100%;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #444;
+      font-family: 'Lexend', sans-serif;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <img id="logooff" src="logooff.png" alt="Access Expired" onclick="redirectBack()" />
+  <div class="footer">
+    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
+    UNAUTHORIZED USE STRICTLY PROHIBITED.
+  </div>
+
+  <script>
+    function redirectBack() {
+      window.location.href = "https://id.adamsabangan.com/demo";
+    }
+  </script>
+</body>
+</html>
