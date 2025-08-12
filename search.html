@@ -22,11 +22,19 @@
       flex-direction: column;
     }
 
-    #logo {
+    #logo, #logooff {
       width: min(60vmin, 400px);
       height: auto;
       transition: opacity 1s ease-in-out;
       cursor: pointer;
+    }
+
+    /* Hover animation for logooff.png */
+    #logooff {
+      transition: transform 0.3s ease-in-out;
+    }
+    #logooff:hover {
+      transform: scale(1.05);
     }
 
     #reveal {
@@ -51,23 +59,26 @@
       background: #000;
     }
 
-    /* Lock Display button */
+    /* LOCK DISPLAY button */
     #lockBtn {
       position: fixed;
-      top: 1rem;
-      right: 1rem;
-      background: rgba(0,0,0,0.7);
+      top: 1.5rem;   /* farther from corner */
+      right: 1.5rem; /* farther from corner */
+      background: #000; /* fully opaque black */
       color: #fff;
       padding: 0.5rem 1rem;
       border: 1px solid #fff;
       text-transform: uppercase;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 500;
       font-size: 0.8rem;
       cursor: pointer;
       z-index: 3;
       display: none;
+      transition: transform 0.3s ease-in-out;
     }
     #lockBtn:hover {
-      background: rgba(255,255,255,0.1);
+      transform: scale(1.05); /* same hover feel as logooff */
     }
 
     .footer {
@@ -103,7 +114,6 @@
     const lockBtn = document.getElementById("lockBtn");
 
     const JSON_URL = "https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f";
-    const DEFAULT_ACCESS = false;
     const EMBED_URL = "https://tally.so/r/wz0QW1?securekey=true";
 
     let attempts = 0;
@@ -128,9 +138,11 @@
       startChecking();
     }
 
-    function timeoutToLogoOff() {
+    function showLogoOff() {
       logo.src = "logooff.png";
+      logo.id = "logooff";
       logo.onclick = () => {
+        logo.id = "logo";
         startChecking();
       };
     }
@@ -150,7 +162,9 @@
     function startChecking() {
       clearInterval(intervalId);
       attempts = 0;
-      logo.onclick = null; // remove click handler until timeout
+      logo.onclick = null;
+      logo.src = "logo.png";
+      logo.id = "logo";
       checkAccess();
 
       intervalId = setInterval(() => {
@@ -160,7 +174,7 @@
         }
         if (attempts === 10 && !revealed) {
           clearInterval(intervalId);
-          timeoutToLogoOff();
+          showLogoOff();
         }
       }, 1000);
     }
