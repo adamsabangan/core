@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proximity Portal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      font-family: 'Lexend', sans-serif;
+      color: #444;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    /* Centered logo exactly like original */
+    #logo {
+      width: min(60vmin, 400px);
+      height: auto;
+      transition: opacity 1s ease-in-out;
+      z-index: 1;
+    }
+
+    /* Fullscreen reveal layer (hidden until access=true) */
+    #reveal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      background: #000;
+      z-index: 0; /* footer stays above */
+    }
+    #reveal.visible {
+      display: block;
+      opacity: 1;
+    }
+    #reveal iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+      /* If embed has issues, you can remove sandbox entirely */
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups";
+    }
+
+    /* Footer: same gray Lexend, all caps */
+    .footer {
+      position: absolute;
+      bottom: 1rem;
+      width: 100%;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #444;
+      font-family: 'Lexend', sans-serif;
+      text-transform: uppercase;
+      z-index: 2; /* on top of iframe */
+    }
+  </style>
+</head>
+<body>
+  <!-- Original centered logo -->
+  <img id="logo" src="logo.png" alt="Waiting for badge tap" />
+
+  <!-- Reveal layer (hidden until trigger) -->
+  <div id="reveal">
+    <iframe id="frame"></iframe>
+  </div>
+
+  <!-- Original footer -->
+  <div class="footer">
+    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
+    UNAUTHORIZED USE STRICTLY PROHIBITED.
+  </div>
+
+  <script>
+    const logo = document.getElementById("logo");
+    const reveal = document.getElementById("reveal");
+    const frame = document.getElementById("frame");
+
+    // ORIGINAL BIN (from your badge site)
+    const JSON_URL = "https://api.jsonbin.io/v3/b/6892b7f57b4b8670d8ae485f";
+    const DASHBOARD_URL = "https://core.adamsabangan.com/dashboard"; // not used now, but kept for parity
+
+    // Page to reveal (your Tally link)
+    const EMBED_URL = "https://tally.so/r/wz0QW1?securekey=true";
+
+    let attempts = 0;
+    let intervalId = null;
+    let revealed = false;
+
+    function revealSite() {
+      if (revealed) return;
+      revealed = true;
+
+      // Hide logo to keep original minimal feel
+      logo.style.display = "none";
+
+      // Load Tally and fade in layer
+      frame.src = EMBED_URL;
+      reveal.classList.add("visible");
+    }
+
+    function checkAccess() {
+      fetch(JSON_URL + "?cb=" + Date.now())
+        .then((response) => response.json())
+        .then((data) => {
+          if (data?.record?.access_granted === true) {
+            clearInterval(intervalId);
+            revealSite();
+          }
+        })
+        .catch((err) => console.error("Fetch error:", err));
+    }
+
+    function startChecking() {
+      checkAccess();
+
+      intervalId = setInterval(() => {
+        attempts++;
+
+        // Original cadence: 1/sec for first 10s, then every 3s until 30s
+        if (attempts <= 10) {
+          checkAccess();
+        } else if (attempts <= 30 && attempts % 3 === 0) {
+          checkAccess();
+        }
+
+        // Warning swap at 25s
+        if (attempts === 25 && !revealed) {
+          logo.style.opacity = 0;
+          setTimeout(() => {
+            logo.src = "logowarning.png";
+            logo.style.opacity = 1;
+          }, 1000);
+        }
+
+        // Timeout at 30s if not revealed
+        if (attempts === 30 && !revealed) {
+          clearInterval(intervalId);
+          window.location.href = "https://id.adamsabangan.com/timeout";
+        }
+      }, 1000);
+    }
+
+    window.onload = startChecking;
+  </script>
+</body>
+</html>
