@@ -146,7 +146,7 @@
     function showTextAfterDelay(txt) {
       // Keep RECEIVED.png visible and show the text after 2s
       fadeToImage(RECEIVED_IMAGE);
-      statusEl.textContent = "Data received. Redirecting now.";
+      statusEl.textContent = "Data received.";
 
       setTimeout(() => {
         clipEl.textContent = txt;
