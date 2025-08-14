@@ -2,190 +2,238 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Universal Clipboard</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@500&display=swap');
 
+    :root { color-scheme: dark; }
     html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #000;
-      font-family: 'Lexend', sans-serif;
-      height: 100vh;
-      width: 100vw;
+      margin: 0; padding: 0;
+      height: 100vh; width: 100vw;
+      background: #000; color: #fff;
+      font-family: 'Lexend', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display: grid; place-items: center;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
+    }
+
+    .wrap {
+      width: min(92vw, 1000px);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+      text-align: center;
     }
 
     #logo {
-      width: min(60vmin, 400px);
+      width: min(60vmin, 420px);
       height: auto;
-      transition: opacity 0.5s ease-in-out, transform 0.3s ease;
+      transition: opacity .3s ease, transform .2s ease;
       cursor: pointer;
+      will-change: opacity, transform;
     }
+    #logo:hover { transform: scale(1.01); opacity: .92; }
 
-    #logo:hover {
-      opacity: 0.8;
-      transform: scale(1.01);
-    }
-
-    #status {
-      margin-top: 1.5rem;
-      font-weight: 500;
-      font-size: 1.1rem;
-      color: #fff;
-      text-align: center;
-    }
+    #status { font-size: 1rem; opacity: .85; }
 
     #clipboard {
       display: none;
       opacity: 0;
       transition: opacity .3s ease;
-      margin-top: 1rem;
-      color: #fff;
+      font-size: clamp(1rem, 2.4vmin + .6rem, 1.15rem);
+      line-height: 1.45;
+      text-align: left;
+      white-space: pre-wrap;         /* preserve line breaks from phone */
+      word-wrap: break-word;
       background: #0b0b0b;
       border: 1px solid #171717;
       border-radius: 16px;
       padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      max-height: 52vh; overflow: auto;
       width: min(92vw, 900px);
-      max-height: 60vh;
-      overflow: auto;
-      white-space: pre-wrap; /* preserve line breaks */
-      word-wrap: break-word;
-      text-align: left;
-      line-height: 1.45;
-      font-size: clamp(1rem, 2.4vmin + .6rem, 1.2rem);
+      margin-top: .25rem;
     }
 
+    .actions {
+      display: none;
+      gap: .6rem;
+      margin-top: .4rem;
+    }
+
+    .btn {
+      appearance: none; border: 0;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: #111; color: #fff;
+      font: 500 0.95rem/1 'Lexend', sans-serif;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease, box-shadow .2s ease;
+      box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    }
+    .btn:hover { transform: scale(1.02); opacity: .95; }
+    .btn:active { transform: scale(.98); }
+
     .footer {
-      position: absolute;
-      bottom: 1rem;
-      width: 100%;
-      text-align: center;
-      font-size: 0.7rem;
-      color: #444;
-      text-transform: uppercase;
+      position: fixed; inset-inline: 0; bottom: 10px;
+      text-align: center; color: #444; font-size: .72rem; text-transform: uppercase;
+      pointer-events: none; letter-spacing: .02em;
     }
   </style>
 </head>
 <body>
-  <img id="logo" src="scan1.png" alt="Logo" />
-  <div id="status">Ready to receive data.</div>
-  <div id="clipboard" aria-live="polite"></div>
+  <div class="wrap">
+    <!-- Uses same art set as your original -->
+    <img id="logo" src="scan1.png" alt="Scanner"/>
+
+    <!-- EXACT original status verbiage -->
+    <div id="status">Ready to receive data.</div>
+
+    <div id="clipboard" aria-live="polite"></div>
+
+    <div class="actions" id="actions">
+      <button class="btn" id="copyBtn" type="button">Copy to clipboard</button>
+    </div>
+  </div>
 
   <div class="footer">
-    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED.<br />
-    UNAUTHORIZED USE STRICTLY PROHIBITED.
+    © 2025 ADAM SABANGAN. ALL RIGHTS RESERVED. • UNAUTHORIZED USE STRICTLY PROHIBITED.
   </div>
 
   <script>
-    const logo = document.getElementById("logo");
-    const status = document.getElementById("status");
-    const clip = document.getElementById("clipboard");
-
-    // ---- CONFIG (updated for text) ----
+    // ====== CONFIG ======
     const JSON_URL = "https://api.jsonbin.io/v3/b/689e2554ae596e708fca1510";
-    const DEFAULT_VALUE = "X"; // sentinel meaning "empty"
-
+    const DEFAULT_VALUE = "X";               // sentinel meaning "empty"
+    const POLL_MS = 1000;                    // check bin every second
+    const DISPLAY_DELAY_MS = 2000;           // wait 2s after receiving text
     const SCAN_IMAGES = ["scan1.png", "scan2.png", "scan3.png"];
     const TAP_IMAGE = "tap.png";
     const RECEIVED_IMAGE = "received.png";
 
+    // ====== ELEMENTS ======
+    const logoEl = document.getElementById('logo');
+    const statusEl = document.getElementById('status');
+    const clipEl = document.getElementById('clipboard');
+    const actionsEl = document.getElementById('actions');
+    const copyBtn = document.getElementById('copyBtn');
+
     let polling = false;
     let frameIndex = 0;
-    let scanInterval;
-    let checkInterval;
+    let scanInterval = null;
+    let checkInterval = null;
+    let showing = false;
 
     function fadeToImage(newSrc) {
-      logo.style.opacity = 0;
+      logoEl.style.opacity = 0;
       setTimeout(() => {
-        logo.src = newSrc;
-        logo.style.opacity = 1;
+        logoEl.src = newSrc;
+        logoEl.style.opacity = 1;
       }, 250);
     }
 
-    function startAnimationLoop() {
+    function startScanAnimation() {
+      frameIndex = 0;
+      logoEl.src = SCAN_IMAGES[frameIndex];
       scanInterval = setInterval(() => {
         frameIndex = (frameIndex + 1) % SCAN_IMAGES.length;
         fadeToImage(SCAN_IMAGES[frameIndex]);
       }, 1000);
     }
 
-    function stopAnimationLoop() {
-      clearInterval(scanInterval);
+    function stopScanAnimation() {
+      if (scanInterval) clearInterval(scanInterval);
+      scanInterval = null;
     }
 
     function showTextAfterDelay(txt) {
-      // show RECEIVED.png and original status line,
-      // then after 2 seconds, hide image and reveal text
+      // Keep RECEIVED.png visible and show the text after 2s
       fadeToImage(RECEIVED_IMAGE);
-      status.textContent = "Data received.";
+      statusEl.textContent = "Data received. Redirecting now.";
 
       setTimeout(() => {
-        // hide the PNG, show the clipboard text
-        logo.style.opacity = 0;
-        setTimeout(() => { logo.style.display = "none"; }, 300);
+        clipEl.textContent = txt;
+        clipEl.style.display = "block";
+        requestAnimationFrame(() => { clipEl.style.opacity = "1"; });
 
-        clip.textContent = txt;
-        clip.style.display = "block";
-        requestAnimationFrame(() => { clip.style.opacity = "1"; });
-      }, 2000);
+        actionsEl.style.display = "flex";
+      }, DISPLAY_DELAY_MS);
     }
 
     function checkForTextAndDisplay() {
-      fetch(JSON_URL + "?cb=" + Date.now(), { cache: "no-store" })
-        .then((res) => res.json())
-        .then((data) => {
+      fetch(`${JSON_URL}?cb=${Date.now()}`, { cache: "no-store" })
+        .then(res => res.json())
+        .then(data => {
           const txt = data?.record?.text;
-          if (typeof txt === "string" && txt.trim() !== "" && txt !== DEFAULT_VALUE) {
-            stopAnimationLoop();
+          if (!showing && typeof txt === "string" && txt.trim() !== "" && txt !== DEFAULT_VALUE) {
+            showing = true;
+            stopScanAnimation();
             clearInterval(checkInterval);
-            polling = false;
             showTextAfterDelay(txt);
           }
         })
-        .catch((err) => console.error("Fetch error:", err));
+        .catch(err => {
+          console.error(err);
+          // Keep silent; status verbiage must match original.
+        });
     }
 
-    function startPolling(duration = 15000) {
+    function startPolling(durationMs = 15000) {
+      if (checkInterval) clearInterval(checkInterval);
+      if (scanInterval) clearInterval(scanInterval);
+      showing = false;
       polling = true;
-      status.textContent = "Ready to receive data.";
-      frameIndex = 0;
-      logo.style.display = "";
-      logo.style.opacity = "1";
-      clip.style.display = "none";
-      clip.style.opacity = "0";
-      clip.textContent = "";
 
-      logo.src = SCAN_IMAGES[frameIndex];
-      startAnimationLoop();
+      // reset UI
+      statusEl.textContent = "Ready to receive data.";
+      clipEl.style.display = "none";
+      clipEl.style.opacity = "0";
+      clipEl.textContent = "";
+      actionsEl.style.display = "none";
+
+      startScanAnimation();
 
       const start = Date.now();
       checkInterval = setInterval(() => {
         const elapsed = Date.now() - start;
-        if (elapsed >= duration) {
+        if (elapsed >= durationMs && !showing) {
           clearInterval(checkInterval);
-          stopAnimationLoop();
+          stopScanAnimation();
           polling = false;
           fadeToImage(TAP_IMAGE);
-          status.textContent = "Tap to scan for data.";
+          statusEl.textContent = "Tap to scan for data.";
         } else {
           checkForTextAndDisplay();
         }
-      }, 1000);
+      }, POLL_MS);
     }
 
-    logo.addEventListener("click", () => {
-      if (!polling) startPolling();
+    // Re-arm scanning when the user clicks the image if it's idle
+    logoEl.addEventListener('click', () => {
+      if (!polling && !scanInterval) startPolling();
     });
 
-    window.onload = () => {
-      startPolling();
-    };
+    // Copy button
+    copyBtn.addEventListener('click', async () => {
+      const text = clipEl.textContent || "";
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          // Fallback
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => (copyBtn.textContent = "Copy to clipboard"), 1500);
+      } catch {
+        copyBtn.textContent = "Copy failed";
+        setTimeout(() => (copyBtn.textContent = "Copy to clipboard"), 1500);
+      }
+    });
+
+    window.addEventListener('load', () => startPolling());
   </script>
 </body>
 </html>
