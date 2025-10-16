@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pebbles & Pearls Counter</title>
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    // 🔧 Replace this with your Firebase config:
+ const firebaseConfig = {
+  apiKey: "AIzaSyDJws-Br3iZ_RZOkCebPLLN0viXz1KNGjg",
+  authDomain: "pearls-pebbles.firebaseapp.com",
+  databaseURL: "https://pearls-pebbles-default-rtdb.firebaseio.com",
+  projectId: "pearls-pebbles",
+  storageBucket: "pearls-pebbles.firebasestorage.app",
+  messagingSenderId: "1062869510687",
+  appId: "1:1062869510687:web:8a2b9e21636c4c7f2a832a"
+};
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // --- Utility ---
+    const people = ["Adam", "Justin", "Joaquin"];
+
+    function updateDisplay(name, value) {
+      const section = document.getElementById(name);
+      const totalElem = section.querySelector(".total");
+      const statusElem = section.querySelector(".status");
+
+      totalElem.textContent = value;
+
+      if (value > 0) {
+        section.style.backgroundColor = "#b8f5b1"; // light green
+        statusElem.textContent = "Status: Pearls";
+      } else if (value < 0) {
+        section.style.backgroundColor = "#f5b1b1"; // light red
+        statusElem.textContent = "Status: Pebbles";
+      } else {
+        section.style.backgroundColor = "#dcdcdc"; // neutral gray
+        statusElem.textContent = "Status: Neutral";
+      }
+    }
+
+    // --- Sync from Firebase ---
+    people.forEach(name => {
+      const personRef = ref(db, "totals/" + name);
+      onValue(personRef, snapshot => {
+        const val = snapshot.val() ?? 0;
+        updateDisplay(name, val);
+      });
+    });
+
+    // --- Buttons ---
+    function changeValue(name, delta) {
+      const personRef = ref(db, "totals/" + name);
+      onValue(personRef, snapshot => {
+        const current = snapshot.val() ?? 0;
+        set(personRef, current + delta);
+      }, { onlyOnce: true });
+    }
+
+    window.increment = (name) => changeValue(name, 1);
+    window.decrement = (name) => changeValue(name, -1);
+  </script>
+
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      background: #111;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+    }
+
+    .person {
+      width: 280px;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      background: #dcdcdc;
+      transition: background 0.3s;
+    }
+
+    .name {
+      font-weight: bold;
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+
+    .buttons {
+      margin-bottom: 10px;
+    }
+
+    button {
+      font-size: 1.2em;
+      margin: 0 10px;
+      width: 50px;
+      height: 50px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .total {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .status {
+      margin-top: 5px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+  <div id="Adam" class="person">
+    <div class="name">Adam</div>
+    <div class="buttons">
+      <button onclick="decrement('Adam')">–</button>
+      <button onclick="increment('Adam')">+</button>
+    </div>
+    <div class="total">0</div>
+    <div class="status">Status: Neutral</div>
+  </div>
+
+  <div id="Justin" class="person">
+    <div class="name">Justin</div>
+    <div class="buttons">
+      <button onclick="decrement('Justin')">–</button>
+      <button onclick="increment('Justin')">+</button>
+    </div>
+    <div class="total">0</div>
+    <div class="status">Status: Neutral</div>
+  </div>
+
+  <div id="Joaquin" class="person">
+    <div class="name">Joaquin</div>
+    <div class="buttons">
+      <button onclick="decrement('Joaquin')">–</button>
+      <button onclick="increment('Joaquin')">+</button>
+    </div>
+    <div class="total">0</div>
+    <div class="status">Status: Neutral</div>
+  </div>
+</body>
+</html>
