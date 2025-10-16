@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pebbles & Pearls v2</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    // 🔧 REPLACE THIS WITH YOUR CONFIG
+  const firebaseConfig = {
+  apiKey: "AIzaSyDJws-Br3iZ_RZOkCebPLLN0viXz1KNGjg",
+  authDomain: "pearls-pebbles.firebaseapp.com",
+  databaseURL: "https://pearls-pebbles-default-rtdb.firebaseio.com",
+  projectId: "pearls-pebbles",
+  storageBucket: "pearls-pebbles.firebasestorage.app",
+  messagingSenderId: "1062869510687",
+  appId: "1:1062869510687:web:8a2b9e21636c4c7f2a832a"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const people = ["Adam", "Justin", "Joaquin"];
+
+    function updateDisplay(name, pearls, pebbles) {
+      const section = document.getElementById(name);
+      const pearlEl = section.querySelector(".pearls .count");
+      const pebbleEl = section.querySelector(".pebbles .count");
+      const netEl = section.querySelector(".net");
+      const statusEl = section.querySelector(".status");
+
+      const net = pearls - pebbles;
+
+      pearlEl.textContent = pearls;
+      pebbleEl.textContent = pebbles;
+      netEl.textContent = net;
+
+      if (net > 0) {
+        section.style.backgroundColor = "#b8f5b1";
+        statusEl.textContent = "Status: Pearls";
+      } else if (net < 0) {
+        section.style.backgroundColor = "#f5b1b1";
+        statusEl.textContent = "Status: Pebbles";
+      } else {
+        section.style.backgroundColor = "#dcdcdc";
+        statusEl.textContent = "Status: Neutral";
+      }
+    }
+
+    // --- Sync + listeners ---
+    people.forEach(name => {
+      const personRef = ref(db, "totals/" + name);
+      onValue(personRef, snap => {
+        const data = snap.val() || { pearls: 0, pebbles: 0 };
+        updateDisplay(name, data.pearls, data.pebbles);
+      });
+    });
+
+    // --- Update Firebase ---
+    async function changeValue(name, category, delta) {
+      const personRef = ref(db, "totals/" + name);
+      const snapshot = await get(personRef);
+      const data = snapshot.val() || { pearls: 0, pebbles: 0 };
+      data[category] = (data[category] || 0) + delta;
+      set(personRef, data);
+    }
+
+    window.incPearl = (name) => changeValue(name, "pearls", 1);
+    window.decPearl = (name) => changeValue(name, "pearls", -1);
+    window.incPebble = (name) => changeValue(name, "pebbles", 1);
+    window.decPebble = (name) => changeValue(name, "pebbles", -1);
+  </script>
+
+  <style>
+    body {
+      font-family: "Lexend", sans-serif;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+      padding: 20px;
+    }
+    .person {
+      width: 320px;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      background: #dcdcdc;
+      transition: background 0.3s;
+    }
+    .name {
+      font-weight: 700;
+      font-size: 1.5em;
+      margin-bottom: 15px;
+    }
+    .section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .label {
+      width: 90px;
+      text-align: right;
+    }
+    .count {
+      width: 40px;
+      text-align: center;
+      font-weight: bold;
+    }
+    button {
+      font-size: 1.1em;
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .net {
+      margin-top: 10px;
+      font-size: 1.4em;
+      font-weight: 700;
+    }
+    .status {
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="Adam" class="person">
+    <div class="name">Adam</div>
+
+    <div class="section pearls">
+      <div class="label">Pearls:</div>
+      <button onclick="decPearl('Adam')">–</button>
+      <div class="count">0</div>
+      <button onclick="incPearl('Adam')">+</button>
+    </div>
+
+    <div class="section pebbles">
+      <div class="label">Pebbles:</div>
+      <button onclick="decPebble('Adam')">–</button>
+      <div class="count">0</div>
+      <button onclick="incPebble('Adam')">+</button>
+    </div>
+
+    <div class="net">0</div>
+    <div class="status">Status: Neutral</div>
+  </div>
+
+  <div id="Justin" class="person">
+    <div class="name">Justin</div>
+
+    <div class="section pearls">
+      <div class="label">Pearls:</div>
+      <button onclick="decPearl('Justin')">–</button>
+      <div class="count">0</div>
+      <button onclick="incPearl('Justin')">+</button>
+    </div>
+
+    <div class="section pebbles">
+      <div class="label">Pebbles:</div>
+      <button onclick="decPebble('Justin')">–</button>
+      <div class="count">0</div>
+      <button onclick="incPebble('Justin')">+</button>
+    </div>
+
+    <div class="net">0</div>
+    <div class="status">Status: Neutral</div>
+  </div>
+
+  <div id="Joaquin" class="person">
+    <div class="name">Joaquin</div>
+
+    <div class="section pearls">
+      <div class="label">Pearls:</div>
+      <button onclick="decPearl('Joaquin')">–</button>
+      <div class="count">0</div>
+      <button onclick="incPearl('Joaquin')">+</button>
+    </div>
+
+    <div class="section pebbles">
+      <div class="label">Pebbles:</div>
+      <button onclick="decPebble('Joaquin')">–</button>
+      <div class="count">0</div>
+      <button onclick="incPebble('Joaquin')">+</button>
+    </div>
+
+    <div class="net">0</div>
+    <div class="status">Status: Neutral</div>
+  </div>
+</body>
+</html>
