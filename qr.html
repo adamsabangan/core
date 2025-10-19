@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log in with Adam ID</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <style>
+    :root { --qr-size: 256px; }
+
+    body {
+      background-color: #0a0a0a;
+      color: #fff;
+      font-family: 'Lexend', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 1.5rem;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: min(80vw, 320px);
+      position: relative;
+      transition: opacity 0.6s ease;
+      z-index: 1;
+    }
+
+    #qrWrapper {
+      width: var(--qr-size);
+      height: var(--qr-size);
+      display: grid;
+      place-items: center;
+      margin-top: 1rem;
+    }
+
+    #qrCanvas {
+      width: var(--qr-size);
+      height: var(--qr-size);
+      image-rendering: pixelated;
+      transition: opacity 0.3s ease;
+    }
+
+    .code {
+      margin-top: 1rem;
+      font-size: 2rem;
+      letter-spacing: 0.3em;
+      cursor: pointer;
+      user-select: all;
+      transition: color 0.3s ease;
+    }
+
+    .refresh-text {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #aaa;
+      text-transform: uppercase;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: color 0.2s ease;
+    }
+
+    .refresh-text:hover { color: #fff; }
+
+    .copied { color: #60a5fa; margin-top: 0.5rem; font-size: 0.9rem; }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 0.7rem;
+      color: #888;
+      transition: opacity 0.6s ease;
+      z-index: 1;
+    }
+
+    iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      z-index: 2;
+      position: fixed;
+      inset: 0;
+    }
+
+    /* LOCK DISPLAY button */
+    #lockBtn {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: #000;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border: 1px solid #fff;
+      text-transform: uppercase;
+      font-family: 'Lexend', sans-serif;
+      font-weight: 500;
+      font-size: 0.8rem;
+      cursor: pointer;
+      z-index: 3;
+      display: none;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #lockBtn:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <div class="card" id="loginCard">
+    <div id="qrWrapper">
+      <canvas id="qrCanvas" width="256" height="256" aria-hidden="true"></canvas>
+    </div>
+    <div id="refreshText" class="refresh-text" onclick="handleAction()">REFRESH</div>
+    <div id="code" class="code" onclick="copyCode()"></div>
+    <div id="copied" class="copied" style="display:none;">Copied!</div>
+  </div>
+
+  <iframe id="tallyFrame" src="https://tally.so/r/wz0QW1?securekey=true"></iframe>
+
+  <button id="lockBtn">LOCK DISPLAY</button>
+
+  <footer id="footer">© 2025 Adam Sabangan. All rights reserved. Unauthorized use prohibited.</footer>
+
+  <script>
+    const codeElement = document.getElementById('code');
+    const copiedElement = document.getElementById('copied');
+    const qrCanvas = document.getElementById('qrCanvas');
+    const loginCard = document.getElementById('loginCard');
+    const tallyFrame = document.getElementById('tallyFrame');
+    const refreshText = document.getElementById('refreshText');
+    const lockBtn = document.getElementById('lockBtn');
+    const footer = document.getElementById('footer');
+
+    const JSON_BIN_URL = "https://api.jsonbin.io/v3/b/68e85fa843b1c97be960e855/latest";
+    const JSON_BIN_KEY = "$2a$10$kLce5EKCBD2xeYjID/6/fu2jDazlCCMaNokbN9VpdN7XtSo6EK8vK"; // optional if private
+
+    const SENTINEL = "000000";
+    let pollingActive = false;
+    let timedOut = false;
+    let currentCode = "";
+
+    function randomSixDigits() {
+      return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+    }
+
+    function generateSixDigitCodeNotSentinel() {
+      let c = randomSixDigits();
+      while (c === SENTINEL) c = randomSixDigits();
+      return c;
+    }
+
+    function drawQR(value, opacity = 1) {
+      qrCanvas.style.opacity = opacity;
+      QRCode.toCanvas(qrCanvas, value, {
+        width: 256,
+        color: { dark: '#ffffff', light: '#0a0a0a' }
+      }, (err) => { if (err) console.error(err); });
+    }
+
+    function setActiveUI() {
+      timedOut = false;
+      refreshText.textContent = "REFRESH";
+      refreshText.onclick = handleAction;
+      codeElement.style.color = '#fff';
+      codeElement.textContent = currentCode;
+      drawQR(currentCode, 1);
+    }
+
+    function setTimeoutUI() {
+      timedOut = true;
+      drawQR(SENTINEL, 0.05);
+      codeElement.textContent = "••••••";
+      codeElement.style.color = '#888';
+      refreshText.textContent = "CLICK TO LOG IN";
+      refreshText.onclick = restartLogin;
+    }
+
+    function generateCodeAndStart() {
+      currentCode = generateSixDigitCodeNotSentinel();
+      copiedElement.style.display = 'none';
+      setActiveUI();
+      pollForMatch(currentCode);
+    }
+
+    async function copyCode() {
+      if (timedOut) return;
+      try {
+        await navigator.clipboard.writeText(codeElement.textContent);
+        copiedElement.style.display = 'block';
+        setTimeout(() => copiedElement.style.display = 'none', 1000);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function pollForMatch(localCode) {
+      pollingActive = true;
+      for (let i = 0; i < 10; i++) {
+        if (!pollingActive) return;
+        try {
+          const res = await fetch(JSON_BIN_URL, {
+            headers: JSON_BIN_KEY ? { "X-Master-Key": JSON_BIN_KEY } : {}
+          });
+          const data = await res.json();
+          const remoteCode = (data?.record?.code || data?.code || "").trim();
+          if (remoteCode !== SENTINEL && localCode !== SENTINEL && remoteCode === localCode) {
+            revealTally();
+            pollingActive = false;
+            return;
+          }
+        } catch (err) {
+          console.error("Error fetching JSON:", err);
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      pollingActive = false;
+      setTimeoutUI();
+    }
+
+    function revealTally() {
+      loginCard.style.opacity = 0;
+      footer.style.opacity = 0;
+      setTimeout(() => {
+        loginCard.style.display = 'none';
+        footer.style.display = 'none';
+        tallyFrame.style.display = 'block';
+        lockBtn.style.display = 'block';
+        // Fade in tally iframe
+        requestAnimationFrame(() => { tallyFrame.style.opacity = 1; });
+      }, 600);
+    }
+
+    function restartLogin() {
+      // Hide tally and show login UI again
+      tallyFrame.style.opacity = 0;
+      lockBtn.style.display = 'none';
+      setTimeout(() => {
+        tallyFrame.style.display = 'none';
+        loginCard.style.display = 'flex';
+        footer.style.display = 'block';
+        loginCard.style.opacity = 1;
+        footer.style.opacity = 1;
+        generateCodeAndStart();
+      }, 600);
+    }
+
+    function handleAction() {
+      if (!timedOut) {
+        pollingActive = false;
+        generateCodeAndStart();
+      }
+    }
+
+    lockBtn.addEventListener('click', restartLogin);
+
+    generateCodeAndStart();
+  </script>
+</body>
+</html>
