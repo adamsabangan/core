@@ -33,9 +33,11 @@
       justify-content: center;
       width: min(80vw, 320px);
       position: relative;
-      transition: opacity 0.6s ease;
+      transition: opacity 0.6s ease, transform 0.2s ease;
+      cursor: default;
       z-index: 1;
     }
+    .card.clickable:hover { transform: scale(1.02); cursor: pointer; }
 
     #qrWrapper {
       width: var(--qr-size);
@@ -66,9 +68,9 @@
       font-size: 0.8rem;
       color: #aaa;
       text-transform: uppercase;
-      cursor: pointer;
       letter-spacing: 0.1em;
       transition: color 0.2s ease;
+      pointer-events: none;
     }
 
     .refresh-text:hover { color: #fff; }
@@ -95,7 +97,6 @@
       inset: 0;
     }
 
-    /* LOCK DISPLAY button */
     #lockBtn {
       position: fixed;
       top: 1.5rem;
@@ -113,7 +114,6 @@
       display: none;
       transition: transform 0.3s ease-in-out;
     }
-
     #lockBtn:hover { transform: scale(1.05); }
   </style>
 </head>
@@ -122,8 +122,8 @@
     <div id="qrWrapper">
       <canvas id="qrCanvas" width="256" height="256" aria-hidden="true"></canvas>
     </div>
-    <div id="refreshText" class="refresh-text" onclick="handleAction()">REFRESH</div>
-    <div id="code" class="code" onclick="copyCode()"></div>
+    <div id="refreshText" class="refresh-text">REFRESH</div>
+    <div id="code" class="code" onclick="copyCode(event)"></div>
     <div id="copied" class="copied" style="display:none;">Copied!</div>
   </div>
 
@@ -143,8 +143,10 @@
     const lockBtn = document.getElementById('lockBtn');
     const footer = document.getElementById('footer');
 
-    const JSON_BIN_URL = "https://api.jsonbin.io/v3/b/68e85fa843b1c97be960e855/latest";
-    const JSON_BIN_KEY = "$2a$10$kLce5EKCBD2xeYjID/6/fu2jDazlCCMaNokbN9VpdN7XtSo6EK8vK"; // optional if private
+    // 🔑 Paste your JSON Bin URL and Read Key below:
+    // Example: "https://api.jsonbin.io/v3/b/68e85fa843b1c97be960e855/latest"
+    const JSON_BIN_URL = "https://api.jsonbin.io/v3/b/68e85fa843b1c97be960e855";
+    const JSON_BIN_KEY = "$2a$10$kLce5EKCBD2xeYjID/6/fu2jDazlCCMaNokbN9VpdN7XtSo6EK8vK"; // leave "" if public
 
     const SENTINEL = "000000";
     let pollingActive = false;
@@ -171,8 +173,8 @@
 
     function setActiveUI() {
       timedOut = false;
+      loginCard.classList.remove('clickable');
       refreshText.textContent = "REFRESH";
-      refreshText.onclick = handleAction;
       codeElement.style.color = '#fff';
       codeElement.textContent = currentCode;
       drawQR(currentCode, 1);
@@ -180,11 +182,13 @@
 
     function setTimeoutUI() {
       timedOut = true;
+      loginCard.classList.add('clickable');
       drawQR(SENTINEL, 0.05);
       codeElement.textContent = "••••••";
       codeElement.style.color = '#888';
       refreshText.textContent = "CLICK TO LOG IN";
-      refreshText.onclick = restartLogin;
+      // subtle pulse to show it’s clickable
+      loginCard.animate([{ opacity: 0.8 }, { opacity: 1 }], { duration: 600, iterations: 2 });
     }
 
     function generateCodeAndStart() {
@@ -194,7 +198,7 @@
       pollForMatch(currentCode);
     }
 
-    async function copyCode() {
+    async function copyCode(e) {
       if (timedOut) return;
       try {
         await navigator.clipboard.writeText(codeElement.textContent);
@@ -203,6 +207,7 @@
       } catch (err) {
         console.error(err);
       }
+      e.stopPropagation();
     }
 
     async function pollForMatch(localCode) {
@@ -237,13 +242,11 @@
         footer.style.display = 'none';
         tallyFrame.style.display = 'block';
         lockBtn.style.display = 'block';
-        // Fade in tally iframe
         requestAnimationFrame(() => { tallyFrame.style.opacity = 1; });
       }, 600);
     }
 
     function restartLogin() {
-      // Hide tally and show login UI again
       tallyFrame.style.opacity = 0;
       lockBtn.style.display = 'none';
       setTimeout(() => {
@@ -256,12 +259,9 @@
       }, 600);
     }
 
-    function handleAction() {
-      if (!timedOut) {
-        pollingActive = false;
-        generateCodeAndStart();
-      }
-    }
+    loginCard.addEventListener('click', () => {
+      if (timedOut) restartLogin();
+    });
 
     lockBtn.addEventListener('click', restartLogin);
 
