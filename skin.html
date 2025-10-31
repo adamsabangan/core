@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Your New Skin Awaits</title>
 
   <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Lexend+Zetta:wght@700&family=Lexend&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Zetta:wght@700&family=Lexend&display=swap" rel="stylesheet" />
 
   <style>
     html, body {
@@ -26,15 +26,21 @@
       justify-content: center;
       align-items: center;
       height: 100%;
+      width: 100%;
       text-align: center;
       transition: opacity 1s ease;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: #000;
+      z-index: 10;
     }
 
     h1 {
       font-size: clamp(1.5rem, 4vw, 3rem);
       font-weight: 700;
       letter-spacing: 0.05em;
-      color: #fff; /* plain white */
+      color: #fff;
     }
 
     button {
@@ -57,7 +63,7 @@
     .disclaimer {
       font-family: 'Lexend', sans-serif;
       font-size: 0.7rem;
-      color: #555; /* charcoal */
+      color: #555;
       margin-top: 1em;
     }
 
@@ -70,24 +76,29 @@
       top: 0;
       left: 0;
       transition: opacity 1s ease;
+      z-index: 1;
     }
 
     .hidden {
-      opacity: 0;
-      pointer-events: none;
+      display: none;
     }
 
-    .visible {
+    .fade-out {
+      opacity: 0;
+    }
+
+    .fade-in {
       opacity: 1;
-      pointer-events: all;
     }
   </style>
 </head>
 <body>
-  <div id="welcome" class="centered visible">
+  <div id="welcome" class="centered">
     <h1>YOUR NEW SKIN AWAITS</h1>
     <button id="enterBtn">ENTER</button>
-    <div class="disclaimer">No medical advice provided. Always consult a dermatologist for your skin needs.</div>
+    <div class="disclaimer">
+      No medical advice provided. Always consult a dermatologist for your skin needs.
+    </div>
   </div>
 
   <iframe id="tallyFrame"></iframe>
@@ -96,15 +107,27 @@
     const params = new URLSearchParams(window.location.search);
     const p = params.get("p") || "";
     const tallyURL = `https://tally.so/r/mVR7yM${p ? `?p=${encodeURIComponent(p)}` : ""}`;
+
     const iframe = document.getElementById("tallyFrame");
     const welcome = document.getElementById("welcome");
     const button = document.getElementById("enterBtn");
 
     button.addEventListener("click", () => {
-      welcome.classList.remove("visible");
-      welcome.classList.add("hidden");
+      // Start fade-out animation
+      welcome.classList.add("fade-out");
+
+      // Load Tally form immediately
       iframe.src = tallyURL;
-      setTimeout(() => iframe.classList.add("visible"), 1000);
+
+      // Fade in iframe after 1s
+      setTimeout(() => {
+        iframe.classList.add("fade-in");
+      }, 800);
+
+      // Completely remove welcome after fade
+      setTimeout(() => {
+        welcome.classList.add("hidden");
+      }, 1200);
     });
   </script>
 </body>
