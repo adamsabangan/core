@@ -36,8 +36,10 @@
       font-family: 'Lexend Zetta', sans-serif;
       font-size: 1rem;
       padding: 0.75em 2em;
+      margin: 0.5em;
       cursor: pointer;
       transition: background-color 0.3s ease, color 0.3s ease;
+      width: fit-content;
     }
 
     button:hover {
@@ -57,17 +59,27 @@
 <body>
   <h1>DYNAMICSHARE</h1>
   <button id="runBtn">RUN SHORTCUT</button>
-  <div class="disclaimer">Tap the button on iPhone to launch your DynamicShare Shortcut.</div>
+  <button id="openBtn">OPEN LINK</button>
+  <div class="disclaimer">Tap on iPhone to run DynamicShare or open the link directly.</div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const p = params.get("p") || "";
-    const shortcutURL = `shortcuts://run-shortcut?name=DynamicShare${p ? `&input=${encodeURIComponent(p)}` : ""}`;
+    const q = params.get("q") || "";
+    const shortcutURL = `shortcuts://run-shortcut?name=DynamicShare${q ? `&input=${encodeURIComponent(q)}` : ""}`;
 
-    const button = document.getElementById("runBtn");
+    const runBtn = document.getElementById("runBtn");
+    const openBtn = document.getElementById("openBtn");
 
-    button.addEventListener("click", () => {
+    runBtn.addEventListener("click", () => {
       window.location.href = shortcutURL;
+    });
+
+    openBtn.addEventListener("click", () => {
+      if (q) {
+        window.location.href = q;
+      } else {
+        alert("No link found in query.");
+      }
     });
   </script>
 </body>
