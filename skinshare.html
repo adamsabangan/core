@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DynamicShare Launcher</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Zetta:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Lexend Zetta', sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 2rem;
+      color: #fff;
+    }
+
+    button {
+      background-color: transparent;
+      border: 2px solid #fff;
+      color: #fff;
+      font-family: 'Lexend Zetta', sans-serif;
+      font-size: 1rem;
+      padding: 0.75em 2em;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .disclaimer {
+      position: absolute;
+      bottom: 1.5rem;
+      font-family: sans-serif;
+      font-size: 0.7rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>DYNAMICSHARE</h1>
+  <button id="runBtn">RUN SHORTCUT</button>
+  <div class="disclaimer">Tap the button on iPhone to launch your DynamicShare Shortcut.</div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("p") || "";
+    const shortcutURL = `shortcuts://run-shortcut?name=DynamicShare${p ? `&input=${encodeURIComponent(p)}` : ""}`;
+
+    const button = document.getElementById("runBtn");
+
+    button.addEventListener("click", () => {
+      window.location.href = shortcutURL;
+    });
+  </script>
+</body>
+</html>
