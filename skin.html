@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your New Skin Awaits</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Zetta:wght@700&family=Lexend&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Lexend Zetta', sans-serif;
+      overflow: hidden;
+    }
+
+    .centered {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      transition: opacity 1s ease;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #fff; /* plain white */
+    }
+
+    button {
+      background-color: transparent;
+      border: 2px solid #fff;
+      color: #fff;
+      font-family: 'Lexend Zetta', sans-serif;
+      font-size: 1rem;
+      padding: 0.75em 2em;
+      margin-top: 1.5em;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .disclaimer {
+      font-family: 'Lexend', sans-serif;
+      font-size: 0.7rem;
+      color: #555; /* charcoal */
+      margin-top: 1em;
+    }
+
+    iframe {
+      border: none;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: opacity 1s ease;
+    }
+
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+  </style>
+</head>
+<body>
+  <div id="welcome" class="centered visible">
+    <h1>YOUR NEW SKIN AWAITS</h1>
+    <button id="enterBtn">ENTER</button>
+    <div class="disclaimer">No medical advice provided. Always consult a dermatologist for your skin needs.</div>
+  </div>
+
+  <iframe id="tallyFrame"></iframe>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("p") || "";
+    const tallyURL = `https://tally.so/r/mVR7yM${p ? `?p=${encodeURIComponent(p)}` : ""}`;
+    const iframe = document.getElementById("tallyFrame");
+    const welcome = document.getElementById("welcome");
+    const button = document.getElementById("enterBtn");
+
+    button.addEventListener("click", () => {
+      welcome.classList.remove("visible");
+      welcome.classList.add("hidden");
+      iframe.src = tallyURL;
+      setTimeout(() => iframe.classList.add("visible"), 1000);
+    });
+  </script>
+</body>
+</html>
