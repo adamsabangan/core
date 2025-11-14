@@ -36,6 +36,7 @@
       object-fit: contain;
       user-select: none;
       -webkit-user-drag: none;
+      cursor: pointer; /* indicate clickable */
     }
   </style>
 </head>
@@ -46,18 +47,25 @@
 
   <script>
     const btn = document.getElementById("presentBtn");
+    const slide = document.getElementById("slide");
 
-    btn.addEventListener("click", async () => {
-      btn.style.display = "none"; // hide button in fullscreen
-
-      try {
-        await document.documentElement.requestFullscreen();
-      } catch (err) {
-        console.error("Fullscreen failed:", err);
+    // Helper: toggle fullscreen
+    async function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        btn.style.display = "none";
+        try { await document.documentElement.requestFullscreen(); } catch (e) {}
+      } else {
+        document.exitFullscreen();
       }
-    });
+    }
 
-    // When exiting fullscreen → show the button again
+    // Click button → fullscreen
+    btn.addEventListener("click", toggleFullscreen);
+
+    // Click image → fullscreen toggle
+    slide.addEventListener("click", toggleFullscreen);
+
+    // When exiting fullscreen → show button again
     document.addEventListener("fullscreenchange", () => {
       if (!document.fullscreenElement) {
         btn.style.display = "block";
