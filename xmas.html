@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Present Mode</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #presentBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 14px 24px;
+      font-size: 18px;
+      font-weight: 600;
+      background: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    #slide {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+      display: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="presentBtn">PRESENT</button>
+  <img id="slide" src="Widescreen.png" alt="Slide">
+
+  <script>
+    const btn = document.getElementById("presentBtn");
+    const slide = document.getElementById("slide");
+
+    btn.addEventListener("click", async () => {
+      slide.style.display = "block";
+      btn.style.display = "none";
+
+      // request fullscreen
+      try {
+        await document.documentElement.requestFullscreen();
+      } catch (err) {
+        console.error("Fullscreen failed:", err);
+      }
+    });
+
+    // If user exits fullscreen (esc), show button again
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement) {
+        slide.style.display = "none";
+        btn.style.display = "block";
+      }
+    });
+  </script>
+
+</body>
+</html>
