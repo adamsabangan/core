@@ -11,6 +11,9 @@
       width: 100%;
       background: #000;
       overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     #presentBtn {
@@ -31,7 +34,6 @@
       width: 100vw;
       height: 100vh;
       object-fit: contain;
-      display: none;
       user-select: none;
       -webkit-user-drag: none;
     }
@@ -44,13 +46,10 @@
 
   <script>
     const btn = document.getElementById("presentBtn");
-    const slide = document.getElementById("slide");
 
     btn.addEventListener("click", async () => {
-      slide.style.display = "block";
-      btn.style.display = "none";
+      btn.style.display = "none"; // hide button in fullscreen
 
-      // request fullscreen
       try {
         await document.documentElement.requestFullscreen();
       } catch (err) {
@@ -58,10 +57,9 @@
       }
     });
 
-    // If user exits fullscreen (esc), show button again
+    // When exiting fullscreen → show the button again
     document.addEventListener("fullscreenchange", () => {
       if (!document.fullscreenElement) {
-        slide.style.display = "none";
         btn.style.display = "block";
       }
     });
