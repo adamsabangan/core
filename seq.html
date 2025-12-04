@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting • Renal SEQ Study Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Lexend font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #000000;
+      --card-bg: #0d0d0d;
+      --accent: #ffffff;
+      --muted: #9aa0a6;
+      --ring: rgba(255, 255, 255, 0.15);
+      --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.85);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #000000;
+      font-family: "Lexend", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 22px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: var(--shadow-soft);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Pure flat throbber — no gradients */
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #ffffff;
+      animation: spin 0.75s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .title {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .main-text {
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .main-text b {
+      font-weight: 600;
+    }
+
+    .meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0.85;
+    }
+
+    a.alt-link {
+      margin-top: 6px;
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: #111111;
+      color: #ffffff;
+      font-size: 0.8rem;
+      text-decoration: none;
+      border: 1px solid var(--ring);
+    }
+
+    @media (max-width: 480px) {
+      .wrapper {
+        padding: 18px;
+      }
+
+      .card {
+        border-radius: 18px;
+        padding: 20px 16px;
+      }
+    }
+  </style>
+
+  <script>
+    const targetUrl = "https://docs.google.com/document/d/1LYg4ZXaStb7slN6FeAw2-249ayj2wNwG1LMYoKVB4DE/edit?usp=sharing";
+
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        window.location.href = targetUrl;
+      }, 2000);
+    });
+  </script>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      
+      <div class="spinner"></div>
+
+      <div class="title">Adam | Medicine</div>
+
+      <p class="main-text">
+        Redirecting to <b>Renal SEQ Study Guide</b>…
+      </p>
+
+      <div class="meta">If it doesn't redirect, use the link below.</div>
+
+      <a class="alt-link" href="https://docs.google.com/document/d/1LYg4ZXaStb7slN6FeAw2-249ayj2wNwG1LMYoKVB4DE/edit?usp=sharing">
+        Open manually
+      </a>
+
+    </div>
+  </div>
+</body>
+</html>
