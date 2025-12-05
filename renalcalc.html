@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Grade Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg: #050509;
+      --card: #11111a;
+      --accent: #40b3ff;
+      --accent-soft: rgba(64, 179, 255, 0.15);
+      --text: #f5f5f7;
+      --muted: #9b9ba6;
+      --danger: #ff6b6b;
+      --good: #23c96b;
+      --border: #262636;
+      --radius-xl: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #151520 0, #050509 55%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .card {
+      background: linear-gradient(145deg, #11111a, #090912);
+      border-radius: 26px;
+      padding: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(255, 255, 255, 0.01);
+      backdrop-filter: blur(18px);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .title-block h1 {
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 4px;
+      color: #f9fafb;
+    }
+
+    .title-block p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--accent);
+    }
+
+    .weights {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      background: rgba(16, 16, 26, 0.9);
+      display: flex;
+      justify-content: center;
+      font-size: 0.78rem;
+      letter-spacing: 0.05em;
+    }
+
+    .inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .field {
+      padding: 10px 11px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      background: rgba(9, 9, 16, 0.95);
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .field-label span {
+      font-size: 0.8rem;
+    }
+    .field-label small {
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(7, 7, 14, 0.9);
+      color: var(--text);
+      font-size: 0.84rem;
+      text-align: right;
+    }
+
+    /* Hide spin buttons (prevents Safari/Chrome scroll value changes) */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .footer-row {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: radial-gradient(circle at top, #40b3ff, #2563eb);
+      color: #f9fafb;
+    }
+
+    .result-card {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(64, 179, 255, 0.3);
+      background: radial-gradient(circle at top left, var(--accent-soft), #050509);
+    }
+
+    .result-grade {
+      font-size: 1.6rem;
+      margin-top: 6px;
+    }
+
+    .privacy-note {
+      margin-top: 14px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <div class="card">
+
+      <div class="header">
+        <div class="title-block">
+          <h1>Renal Grade Calculator</h1>
+          <p>Percent OR points</p>
+        </div>
+        <div class="pill">LIVE</div>
+      </div>
+
+      <div class="weights">
+        <div class="chip">Current · 25%</div>
+        <div class="chip">MCQ · 70%</div>
+        <div class="chip">SEQ · 5%</div>
+      </div>
+
+      <div class="inputs">
+
+        <!-- Current grade -->
+        <div class="field">
+          <div class="field-label">
+            <span>Current grade</span>
+            <small>Percent only</small>
+          </div>
+          <input id="currentPct" type="number" placeholder="%" min="0" max="100" />
+          <div></div>
+        </div>
+
+        <!-- MCQ -->
+        <div class="field">
+          <div class="field-label">
+            <span>MCQ exam</span>
+            <small>Percent OR points (93)</small>
+          </div>
+          <input id="mcqPct" type="number" placeholder="%" />
+          <input id="mcqPts" type="number" placeholder="pts" />
+        </div>
+
+        <!-- SEQ -->
+        <div class="field">
+          <div class="field-label">
+            <span>SEQ exam</span>
+            <small>Percent OR points (10)</small>
+          </div>
+          <input id="seqPct" type="number" placeholder="%" />
+          <input id="seqPts" type="number" placeholder="pts" />
+        </div>
+
+      </div>
+
+      <div class="footer-row">
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+
+      <div class="result-card">
+        <div>Projected final grade:</div>
+        <div id="resultGrade" class="result-grade">—</div>
+      </div>
+
+      <div class="privacy-note">
+        This calculator runs entirely on your device. No data is stored or sent anywhere.
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const WEIGHT_CURRENT = 0.25;
+    const WEIGHT_MCQ = 0.70;
+    const WEIGHT_SEQ = 0.05;
+
+    const mcqMax = 93;
+    const seqMax = 10;
+
+    const curEl = document.getElementById("currentPct");
+
+    const mcqPctEl = document.getElementById("mcqPct");
+    const mcqPtsEl = document.getElementById("mcqPts");
+
+    const seqPctEl = document.getElementById("seqPct");
+    const seqPtsEl = document.getElementById("seqPts");
+
+    const resultEl = document.getElementById("resultGrade");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // Prevent scroll-wheel changing values
+    document.querySelectorAll("input[type=number]").forEach((el) => {
+      el.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+    });
+
+    function getVal(el) {
+      const v = parseFloat(el.value);
+      return isNaN(v) ? null : v;
+    }
+
+    function sync(pctEl, ptsEl, max) {
+      const pct = getVal(pctEl);
+      const pts = getVal(ptsEl);
+
+      // percent typed → update points
+      if (document.activeElement === pctEl && pct !== null) {
+        ptsEl.value = ((pct / 100) * max).toFixed(2);
+      }
+
+      // points typed → update percent
+      if (document.activeElement === ptsEl && pts !== null) {
+        pctEl.value = ((pts / max) * 100).toFixed(2);
+      }
+
+      // clearing one clears the other
+      if (document.activeElement === pctEl && pctEl.value === "") {
+        ptsEl.value = "";
+      }
+      if (document.activeElement === ptsEl && ptsEl.value === "") {
+        pctEl.value = "";
+      }
+    }
+
+    function compute() {
+      sync(mcqPctEl, mcqPtsEl, mcqMax);
+      sync(seqPctEl, seqPtsEl, seqMax);
+
+      const current = getVal(curEl);
+      const mcqPct = getVal(mcqPctEl);
+      const seqPct = getVal(seqPctEl);
+
+      if (current === null && mcqPct === null && seqPct === null) {
+        resultEl.textContent = "—";
+        return;
+      }
+
+      const c = current ?? 0;
+      const m = mcqPct ?? 0;
+      const s = seqPct ?? 0;
+
+      const final =
+        c * WEIGHT_CURRENT +
+        m * WEIGHT_MCQ +
+        s * WEIGHT_SEQ;
+
+      resultEl.textContent = final.toFixed(2) + "%";
+    }
+
+    [curEl, mcqPctEl, mcqPtsEl, seqPctEl, seqPtsEl].forEach((el) =>
+      el.addEventListener("input", compute)
+    );
+
+    resetBtn.addEventListener("click", () => {
+      curEl.value = "";
+      mcqPctEl.value = "";
+      mcqPtsEl.value = "";
+      seqPctEl.value = "";
+      seqPtsEl.value = "";
+      compute();
+    });
+
+    compute();
+  </script>
+</body>
+</html>
