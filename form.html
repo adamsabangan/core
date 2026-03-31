@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: 'Lexend', sans-serif;
+    background: white;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.inner {
+    width: 100%;
+    max-width: 460px;
+}
+
+h1 {
+    font-weight: 500;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+p {
+    color: #555;
+    margin-bottom: 8px;
+}
+
+/* FIELD WRAPPER */
+.field {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+/* EMAIL ROW */
+.input-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.input-row input {
+    flex: 1;
+}
+
+/* INPUTS */
+input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+    transition: 0.2s;
+}
+
+input:focus {
+    border-color: #00056d;
+    box-shadow: 0 0 0 2px rgba(0,5,109,0.1);
+}
+
+/* BUTTONS */
+.arrow-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    border: none;
+    background: #ccc;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.arrow-btn.active {
+    background: #00056d;
+}
+
+.arrow-btn:hover {
+    transform: scale(1.05);
+}
+
+.arrow-btn:active {
+    transform: scale(0.95);
+}
+
+.continue-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 999px;
+    border: none;
+    background: #ccc;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: 0.2s;
+}
+
+.continue-btn.active {
+    background: #00056d;
+}
+
+.continue-btn:hover {
+    transform: translateY(-1px);
+}
+
+.continue-btn:active {
+    transform: translateY(1px);
+}
+
+/* TEXT */
+.small-text {
+    font-size: 12px;
+    color: #888;
+    margin-top: 10px;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+/* STATES */
+.hidden {
+    display: none;
+}
+
+/* FOOTER */
+.footer {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    padding: 20px;
+}
+
+.footer a {
+    color: #888;
+    text-decoration: none;
+}
+
+/* LOADER */
+.throbber {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #ddd;
+    border-top: 3px solid #00056d;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.switch-user {
+    margin-top: 20px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+}
+
+.switch-user:hover {
+    background: #f5f5f5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<div class="inner">
+
+<h1 id="title">Form</h1>
+
+<div id="formArea">
+
+<p>Hi there, let’s get started. What’s your email?</p>
+
+<div class="input-row">
+    <input id="email" autocomplete="email">
+    <button id="nextBtn" class="arrow-btn">→</button>
+</div>
+
+<div id="emailError" class="error hidden">Please enter your LLU Email to continue</div>
+
+<div id="extraFields" class="hidden">
+
+    <div class="field">
+        <p>What’s your full name?</p>
+        <input id="name" placeholder="John Doe" autocomplete="name">
+    </div>
+
+    <div id="roleWrap" class="field">
+        <p>What’s your role?</p>
+        <input id="role" placeholder="MS1, D2">
+    </div>
+
+    <button id="continueBtn" class="continue-btn">Continue →</button>
+
+    <div class="small-text">
+        When you click Continue, we’ll send your information to our form provider partner.
+    </div>
+
+</div>
+
+</div>
+
+<div id="returningArea" class="hidden" style="text-align:center;">
+    <p id="welcomeText"></p>
+    <div class="throbber"></div>
+    <button class="switch-user" id="resetUser"></button>
+</div>
+
+</div>
+</div>
+
+<div class="footer">
+  <a href="https://www.adamsabangan.com/formshelp" target="_blank">Help</a><br>
+  This form will save your info for next time. <a href="https://www.adamsabangan.com/formshelp" target="_blank">Learn more</a><br>
+  © 2026 Adam Sabangan. All rights reserved.
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+
+const tallyLink = params.get('Y') || '';
+const title = params.get('T') || 'Form';
+const requireLLU = params.get('L') === 'TRUE';
+const showRole = params.get('R') !== 'FALSE';
+
+document.title = title;
+document.getElementById('title').innerText = title;
+
+const emailInput = document.getElementById('email');
+emailInput.placeholder = requireLLU ? "jdoe@students.llu.edu" : "jdoe@example.com";
+
+if (!showRole) document.getElementById('roleWrap').style.display = 'none';
+
+/* RETURNING USER */
+const saved = JSON.parse(localStorage.getItem('formIQ'));
+
+if (saved) {
+    document.getElementById('formArea').classList.add('hidden');
+    document.getElementById('returningArea').classList.remove('hidden');
+
+    document.getElementById('welcomeText').innerText = `Hi ${saved.name}, welcome back!`;
+    document.getElementById('resetUser').innerText = `I'm not ${saved.name}`;
+
+    setTimeout(() => window.location.href = buildURL(saved), 1000);
+}
+
+/* VALIDATION */
+function validateEmail(email) {
+    if (!requireLLU) return true;
+    return email.includes("llu.edu");
+}
+
+/* 🔥 THIS FIXES YOUR BUTTON */
+function updateEmailButton() {
+    const email = emailInput.value.trim();
+    const valid = email && validateEmail(email);
+
+    document.getElementById('nextBtn').classList.toggle('active', valid);
+}
+
+emailInput.addEventListener('input', updateEmailButton);
+
+/* NEXT BUTTON CLICK */
+document.getElementById('nextBtn').onclick = () => {
+    const email = emailInput.value.trim();
+
+    if (!email || !validateEmail(email)) {
+        document.getElementById('emailError').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('emailError').classList.add('hidden');
+    document.getElementById('extraFields').classList.remove('hidden');
+    document.getElementById('name').focus();
+};
+
+/* FORM VALID */
+function isFormValid() {
+    const email = emailInput.value.trim();
+    const name = document.getElementById('name').value.trim();
+    const role = showRole ? document.getElementById('role').value.trim() : "ok";
+
+    return email && name && role && validateEmail(email);
+}
+
+/* BUTTON STATE */
+function updateContinueState() {
+    document.getElementById('continueBtn')
+        .classList.toggle('active', isFormValid());
+}
+
+document.addEventListener('input', updateContinueState);
+
+/* URL BUILDER */
+function buildURL(data) {
+    let url = tallyLink;
+    url += `?e=${encodeURIComponent(data.email)}&n=${encodeURIComponent(data.name)}`;
+    if (showRole) url += `&r=${encodeURIComponent(data.role || '')}`;
+    return url;
+}
+
+/* CONTINUE */
+document.getElementById('continueBtn').onclick = () => {
+    if (!isFormValid()) return;
+
+    const data = {
+        email: emailInput.value.trim(),
+        name: document.getElementById('name').value.trim(),
+        role: document.getElementById('role')?.value.trim()
+    };
+
+    localStorage.setItem('formIQ', JSON.stringify(data));
+    window.location.href = buildURL(data);
+};
+
+/* RESET */
+document.getElementById('resetUser').onclick = () => {
+    localStorage.removeItem('formIQ');
+    location.reload();
+};
+
+/* ENTER KEY */
+document.addEventListener('keydown', (e) => {
+    if (e.key === "Enter") {
+        if (!document.getElementById('extraFields').classList.contains('hidden')) {
+            document.getElementById('continueBtn').click();
+        } else {
+            document.getElementById('nextBtn').click();
+        }
+    }
+});
+</script>
+
+</body>
+</html>
