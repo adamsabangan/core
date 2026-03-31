@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superform Link Generator</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
+  h1 { margin-bottom: 30px; }
+  label { display: block; margin-top: 15px; font-weight: bold; }
+  input[type="text"] { width: 300px; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+  .button-group { margin-top: 10px; }
+  .circle-btn {
+    display: inline-block;
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background: #eee;
+    margin-right: 10px;
+    cursor: pointer;
+    vertical-align: middle;
+    font-weight: bold;
+    color: #333;
+    line-height: 46px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .circle-btn.selected { background: #007bff; color: white; border-color: #007bff; }
+  button.generate {
+    margin-top: 25px; padding: 12px 25px; font-size: 16px;
+    border: none; border-radius: 5px; background: #ccc; color: white; cursor: not-allowed;
+    transition: background 0.2s;
+  }
+  button.generate.active { background: #007bff; cursor: pointer; }
+  button.copy-btn {
+    margin-top: 15px; padding: 10px 20px; border: none; border-radius: 5px;
+    background: #28a745; color: white; cursor: pointer; display: none;
+  }
+  #generatedLink { margin-top: 20px; font-weight: bold; color: blue; word-break: break-all; }
+</style>
+</head>
+<body>
+
+<h1>Superform Link Generator</h1>
+
+<label for="variableLink">Variable Form Link (Y):</label>
+<input type="text" id="variableLink" placeholder="Enter variable form link">
+
+<label for="title">Form Title (T):</label>
+<input type="text" id="title" placeholder="Enter form title">
+
+<label>Require LLU emails?</label>
+<div class="button-group" id="lluGroup">
+  <div class="circle-btn" onclick="selectOption('llu','TRUE', this)">Y</div>
+  <div class="circle-btn" onclick="selectOption('llu','FALSE', this)">N</div>
+</div>
+
+<label>Ask user for role?</label>
+<div class="button-group" id="roleGroup">
+  <div class="circle-btn" onclick="selectOption('role','TRUE', this)">Y</div>
+  <div class="circle-btn" onclick="selectOption('role','FALSE', this)">N</div>
+</div>
+
+<button class="generate" id="generateBtn" onclick="generateLink()">Generate Link</button>
+
+<p id="generatedLink"></p>
+<button class="copy-btn" id="copyBtn" onclick="copyLink()">Copy Link</button>
+
+<script>
+let selections = { llu: 'FALSE', role: 'FALSE' };
+
+function selectOption(group, value, button) {
+  selections[group] = value;
+  const groupDiv = document.getElementById(group + 'Group');
+  Array.from(groupDiv.children).forEach(btn => btn.classList.remove('selected'));
+  button.classList.add('selected');
+  checkInputs();
+}
+
+// Enable Generate button only if both inputs have values
+function checkInputs() {
+  const variableLink = document.getElementById("variableLink").value.trim();
+  const title = document.getElementById("title").value.trim();
+  const btn = document.getElementById("generateBtn");
+  if(variableLink && title){
+    btn.classList.add('active');
+    btn.disabled = false;
+  } else {
+    btn.classList.remove('active');
+    btn.disabled = true;
+  }
+}
+
+document.getElementById("variableLink").addEventListener("input", checkInputs);
+document.getElementById("title").addEventListener("input", checkInputs);
+
+function generateLink() {
+  const baseUrl = "https://id.adamsabangan.com/form";
+  const Y = encodeURIComponent(document.getElementById("variableLink").value);
+  const T = encodeURIComponent(document.getElementById("title").value);
+  const L = selections['llu'];
+  const R = selections['role'];
+  const fullLink = `${baseUrl}?Y=${Y}&T=${T}&L=${L}&R=${R}`;
+  document.getElementById("generatedLink").textContent = fullLink;
+  document.getElementById("copyBtn").style.display = "inline-block";
+}
+
+function copyLink() {
+  const link = document.getElementById("generatedLink").textContent;
+  navigator.clipboard.writeText(link).then(() => {
+    alert("Link copied to clipboard!");
+  });
+}
+</script>
+
+</body>
+</html>
