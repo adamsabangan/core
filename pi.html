@@ -1,0 +1,709 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Pi Recall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Layout: one centered column. Sticky segmented tab bar on top, then one panel per mode.
+   Recall keeps its counters and entry field pinned under the tabs while the chunked sheet scrolls beneath. */
+:root {
+  --bg: #F1F5F8;
+  --surface: #FFFFFF;
+  --surface-2: #E6EDF2;
+  --line: #D3DDE5;
+  --fg: #0C1A25;
+  --muted: #5A6D7C;
+  --accent: #0A7BA5;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #D9EFF8;
+  --accent-line: #B4DBEA;
+  --good: #108A64;
+  --good-soft: #D6F1E7;
+  --good-line: #9BD8C1;
+  --bad: #D42E49;
+  --bad-soft: #FBDDE2;
+  --glow: rgba(10, 123, 165, 0.16);
+  --shadow: rgba(12, 26, 37, 0.10);
+
+  --font-display: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --radius: 20px;
+  --tabs-h: 64px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #081018;
+    --surface: #0E1A26;
+    --surface-2: #142335;
+    --line: #20344A;
+    --fg: #E7F0F6;
+    --muted: #8BA1B3;
+    --accent: #62CFF7;
+    --accent-ink: #03202D;
+    --accent-soft: rgba(98, 207, 247, 0.13);
+    --accent-line: #285B72;
+    --good: #46DBA2;
+    --good-soft: rgba(70, 219, 162, 0.13);
+    --good-line: #25654E;
+    --bad: #FF6C82;
+    --bad-soft: rgba(255, 108, 130, 0.17);
+    --glow: rgba(98, 207, 247, 0.13);
+    --shadow: rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #081018;
+  --surface: #0E1A26;
+  --surface-2: #142335;
+  --line: #20344A;
+  --fg: #E7F0F6;
+  --muted: #8BA1B3;
+  --accent: #62CFF7;
+  --accent-ink: #03202D;
+  --accent-soft: rgba(98, 207, 247, 0.13);
+  --accent-line: #285B72;
+  --good: #46DBA2;
+  --good-soft: rgba(70, 219, 162, 0.13);
+  --good-line: #25654E;
+  --bad: #FF6C82;
+  --bad-soft: rgba(255, 108, 130, 0.17);
+  --glow: rgba(98, 207, 247, 0.13);
+  --shadow: rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(900px 380px at 50% -140px, var(--glow), transparent 72%);
+  background-repeat: no-repeat;
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 18px 64px;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.app { max-width: 820px; margin-inline: auto; }
+
+/* Header */
+.brand { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
+.brand .pi { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; color: var(--accent); }
+.brand .word { font-weight: 600; letter-spacing: 0.02em; font-size: 0.95rem; }
+
+/* Tabs */
+.tabbar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  padding-block: 8px;
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.seg {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+  background: var(--surface-2);
+  border-radius: 16px;
+}
+.thumb {
+  position: absolute; top: 4px; bottom: 4px; left: 4px;
+  width: calc((100% - 8px) / 3);
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px var(--shadow);
+  transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+.seg[data-i="1"] .thumb { transform: translateX(100%); }
+.seg[data-i="2"] .thumb { transform: translateX(200%); }
+.tab {
+  position: relative; z-index: 1;
+  height: 40px; border: 0; background: transparent;
+  color: var(--muted); font-weight: 600; font-size: 0.92rem; letter-spacing: 0.01em;
+  border-radius: 12px;
+  transition: color 0.2s;
+}
+.tab[aria-selected="true"] { color: var(--fg); }
+
+/* Panels */
+.panel { display: flex; flex-direction: column; gap: 16px; padding-top: 14px; }
+.h {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.1rem, 7.5vw, 3rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+.h em { color: var(--accent); }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 52ch; }
+
+/* Buttons */
+.btn {
+  height: 46px; padding-inline: 20px;
+  border-radius: 14px; border: 1.5px solid var(--line);
+  background: transparent; font-weight: 600; font-size: 0.95rem;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.small { height: 36px; padding-inline: 14px; font-size: 0.85rem; border-radius: 11px; }
+
+/* Entry field */
+.field {
+  display: flex; align-items: center; gap: 12px;
+  height: 58px; padding-inline: 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  cursor: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.field-prefix { font-family: var(--font-display); font-size: 2rem; line-height: 1; color: var(--accent); }
+.field-prefix.mono { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); letter-spacing: 0.04em; }
+.field input {
+  flex: 1; min-width: 0; height: 100%;
+  border: 0; outline: 0; background: transparent;
+  font-family: var(--font-mono); font-size: 1.5rem; font-weight: 500;
+  caret-color: var(--accent);
+}
+.field input::placeholder { font-family: var(--font-ui); font-size: 1rem; font-weight: 400; color: var(--muted); opacity: 1; }
+.field.warn input::placeholder { color: var(--bad); }
+.field.flash { animation: fieldflash 0.65s ease; }
+@keyframes fieldflash {
+  0%, 55% { border-color: var(--bad); background: var(--bad-soft); box-shadow: 0 0 0 4px var(--bad-soft); }
+  100% { border-color: var(--line); background: var(--surface); box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* Recall */
+.recall-top {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + var(--tabs-h));
+  z-index: 10;
+  display: flex; flex-direction: column; gap: 10px;
+  padding-block: 8px 10px;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.stats { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.stat { display: flex; align-items: baseline; gap: 6px; }
+.stat-num { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat-num.bad { color: var(--bad); }
+.stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 500; }
+.stats .btn { margin-left: auto; }
+
+.sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  cursor: text;
+}
+.sheet.plain { cursor: default; }
+.lead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.lead .three { font-family: var(--font-display); font-size: 3.2rem; line-height: 0.9; color: var(--accent); }
+.lead .note { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.chunks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 18px 22px; padding-bottom: 6px; }
+.chunk { scroll-margin-top: 250px; scroll-margin-bottom: 24px; }
+.chunk-label {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em;
+  color: var(--muted); margin-bottom: 4px; font-variant-numeric: tabular-nums;
+}
+.chunk.done .chunk-label { color: var(--good); }
+.cells { display: flex; gap: 3px; }
+.cell {
+  position: relative;
+  flex: 1 1 0; min-width: 0;
+  height: 2.6rem;
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 1.5rem; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 2px solid var(--line);
+  border-radius: 7px 7px 0 0;
+}
+.cell.on { border-bottom-color: var(--accent-line); }
+.chunk.done .cell.on { border-bottom-color: var(--good-line); }
+.cell.next { border-bottom-color: var(--accent); background: var(--accent-soft); }
+.cell.next::after { content: ''; width: 2px; height: 1.3rem; background: var(--accent); }
+.cell.flash { animation: cellflash 0.65s ease; }
+@keyframes cellflash {
+  0%, 55% { background: var(--bad-soft); border-bottom-color: var(--bad); }
+  100% { background: var(--accent-soft); border-bottom-color: var(--accent); }
+}
+.peek .cell:not(.on)::after { content: attr(data-a); width: auto; height: auto; background: none; color: var(--muted); }
+.complete {
+  margin-top: 16px; padding: 14px 16px; border-radius: 14px;
+  background: var(--good-soft); color: var(--good); font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .field.flash { animation: fieldflash 0.65s ease, shake 0.4s; }
+  .cell.flash { animation: cellflash 0.65s ease, shake 0.4s; }
+  .cell.on.pop { animation: pop 0.24s ease-out; }
+  .cell.next::after { animation: blink 1.05s steps(2, start) infinite; }
+}
+@keyframes pop {
+  0% { transform: scale(1.4); color: var(--accent); }
+  100% { transform: scale(1); }
+}
+@keyframes blink { to { visibility: hidden; } }
+
+/* Learn: grid */
+.progress { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 0.85rem; }
+.bar { flex: 1; height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--good); border-radius: 99px; transition: width 0.4s; }
+.blocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.4rem, 1fr)); gap: 10px; }
+.blk {
+  position: relative;
+  height: 56px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  font-family: var(--font-mono); font-size: 0.9rem; font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.blk:hover { border-color: var(--accent); }
+.blk:active { transform: scale(0.97); }
+.blk.learned { background: var(--good-soft); border-color: var(--good-line); color: var(--good); }
+.blk.learned::after {
+  content: ''; position: absolute; top: 8px; right: 8px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--good);
+}
+
+/* Learn: block */
+.blk-head { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.blk-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.blk-title { font-family: var(--font-display); font-size: 2rem; line-height: 1; margin: 0; }
+.pill {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 6px 12px; border-radius: 99px;
+  background: var(--accent-soft); color: var(--accent);
+}
+[data-phase="done"] .pill { background: var(--good-soft); color: var(--good); }
+.learn-card {
+  display: flex; flex-direction: column; gap: 22px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 26px 18px 20px;
+  transition: border-color 0.3s;
+}
+.learn-card[data-phase="done"] { border-color: var(--good-line); }
+.big { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.big .grp { flex: 1 1 9rem; display: flex; gap: 4px; }
+.big .cell { height: 3.7rem; font-size: clamp(1.9rem, 9vw, 3rem); }
+.learn-card[data-phase="done"] .cell.on { color: var(--good); border-bottom-color: var(--good-line); }
+.hint { margin: 0; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* View */
+.view-head { display: flex; flex-direction: column; gap: 14px; }
+.toggle { display: inline-flex; padding: 4px; gap: 2px; background: var(--surface-2); border-radius: 14px; align-self: flex-start; }
+.toggle button {
+  height: 36px; padding-inline: 16px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--muted); font-weight: 600; font-size: 0.88rem;
+}
+.toggle button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px var(--shadow); }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.6rem, 1fr)); gap: 16px 10px; }
+.vlabel { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vdigits { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 500; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+.flow {
+  margin: 0; font-family: var(--font-mono); font-size: 1.15rem; font-weight: 500;
+  line-height: 1.95; letter-spacing: 0.07em; word-break: break-all; overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.flow .three { font-family: var(--font-display); font-size: 1.6em; color: var(--accent); letter-spacing: 0; }
+@media (min-width: 600px) {
+  .vgrid { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 20px 14px; }
+  .vdigits { font-size: 1.25rem; }
+  .flow { font-size: 1.35rem; }
+  .sheet { padding: 24px; }
+}
+</style>
+
+<div class="app">
+  <div class="brand"><span class="pi" aria-hidden="true">π</span><span class="word">Pi Recall</span></div>
+
+  <div class="tabbar">
+    <div class="seg" id="seg" data-i="0" role="tablist" aria-label="Mode">
+      <span class="thumb" aria-hidden="true"></span>
+      <button class="tab" role="tab" id="t-recall" aria-selected="true" aria-controls="tab-recall" data-tab="recall" type="button">Recall</button>
+      <button class="tab" role="tab" id="t-learn" aria-selected="false" aria-controls="tab-learn" data-tab="learn" type="button">Learn</button>
+      <button class="tab" role="tab" id="t-view" aria-selected="false" aria-controls="tab-view" data-tab="view" type="button">View</button>
+    </div>
+  </div>
+
+  <!-- RECALL -->
+  <section class="panel" id="tab-recall" role="tabpanel" aria-labelledby="t-recall">
+    <div>
+      <h1 class="h">Type pi <em>from memory.</em></h1>
+      <p class="sub">Start right after the decimal point. A wrong digit flashes red and is refused, so just type the right one.</p>
+    </div>
+    <div class="recall-top">
+      <div class="stats">
+        <div class="stat"><span class="stat-num" id="rDigits">0</span><span class="stat-label">digits</span></div>
+        <div class="stat"><span class="stat-num" id="rSlips">0</span><span class="stat-label">slips</span></div>
+        <div class="stat"><span class="stat-num" id="rBest">0</span><span class="stat-label">best</span></div>
+        <button class="btn small" id="rReset" type="button">Start over</button>
+      </div>
+      <label class="field" id="rField" for="rInput">
+        <span class="field-prefix" aria-hidden="true">3.</span>
+        <input id="rInput" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Digit 1" aria-label="Next digit of pi after the decimal point">
+      </label>
+    </div>
+    <div class="sheet" id="rSheet">
+      <div class="lead"><span class="three">3.</span><span class="note">Digits after the point</span></div>
+      <div class="chunks" id="rChunks"></div>
+      <div class="complete" id="rDone" hidden>That is all 1,000 digits. Nothing left to type.</div>
+    </div>
+    <div class="sr" id="rLive" aria-live="polite"></div>
+  </section>
+
+  <!-- LEARN -->
+  <section class="panel" id="tab-learn" role="tabpanel" aria-labelledby="t-learn" hidden>
+    <div id="lGrid" class="panel" style="padding-top:0">
+      <div>
+        <h1 class="h">Learn it <em>in tens.</em></h1>
+        <p class="sub">Pick a block of ten digits. Study it, hide it, then type it back from memory.</p>
+      </div>
+      <div class="progress"><span id="lCount">0 of 100 blocks learned</span><div class="bar"><i id="lBar"></i></div></div>
+      <div class="blocks" id="lBlocks"></div>
+    </div>
+
+    <div id="lBlock" class="panel" style="padding-top:0" hidden>
+      <div class="blk-head">
+        <button class="btn small" id="lBack" type="button">← All blocks</button>
+        <div class="blk-title-row">
+          <h2 class="blk-title">Digits <span id="lRange">1–10</span></h2>
+          <span class="pill" id="lPhase">Study</span>
+        </div>
+      </div>
+      <div class="learn-card" id="lCard" data-phase="study">
+        <div class="big" id="lCells"></div>
+        <p class="hint" id="lHint"></p>
+        <label class="field" id="lField" for="lInput" hidden>
+          <span class="field-prefix mono" id="lPrefix">1–10</span>
+          <input id="lInput" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Digit 1" aria-label="Next digit of this block">
+        </label>
+        <div class="actions" id="lActions"></div>
+      </div>
+      <div class="sr" id="lLive" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- VIEW -->
+  <section class="panel" id="tab-view" role="tabpanel" aria-labelledby="t-view" hidden>
+    <div class="view-head">
+      <div>
+        <h1 class="h">The first <em>1,000 digits.</em></h1>
+        <p class="sub">Read it in chunks of ten, or as one unbroken string.</p>
+      </div>
+      <div class="toggle" role="group" aria-label="Layout">
+        <button type="button" id="vChunks" aria-pressed="true">Chunked</button>
+        <button type="button" id="vFlow" aria-pressed="false">Continuous</button>
+      </div>
+    </div>
+    <div class="sheet plain" id="vSheet"></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var PI = "1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903600113305305488204665213841469519415116094330572703657595919530921861173819326117931051185480744623799627495673518857527248912279381830119491298336733624406566430860213949463952247371907021798609437027705392171762931767523846748184676694051320005681271452635608277857713427577896091736371787214684409012249534301465495853710507922796892589235420199561121290219608640344181598136297747713099605187072113499999983729780499510597317328160963185950244594553469083026425223082533446850352619311881710100031378387528865875332083814206171776691473035982534904287554687311595628638823537875937519577818577805321712268066130019278766111959092164201989";           // digits after the decimal point
+  var N = PI.length;
+  var BLOCKS = Math.floor(N / 10);
+  var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function $(s) { return document.querySelector(s); }
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  /* ---------- shared helpers ---------- */
+  function flash(el) {
+    if (!el) return;
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    clearTimeout(el._ft);
+    el._ft = setTimeout(function () { el.classList.remove('flash'); }, 700);
+  }
+  function buzz() { try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {} }
+
+  // Every typed character is read, the field is emptied, and only a correct digit is accepted.
+  function bindDigits(input, ctrl) {
+    input.addEventListener('input', function () {
+      var v = input.value;
+      input.value = '';
+      for (var i = 0; i < v.length; i++) {
+        var ch = v.charAt(i);
+        if (ch < '0' || ch > '9') continue;
+        var exp = ctrl.expected();
+        if (exp === null) return;
+        if (ch === exp) ctrl.accept(ch);
+        else { ctrl.reject(); return; }
+      }
+    });
+  }
+
+  function makeCells(parent, count, offset, startIdx) {
+    var arr = [];
+    for (var i = 0; i < count; i++) {
+      var c = document.createElement('span');
+      c.className = 'cell';
+      parent.appendChild(c);
+      arr.push(c);
+    }
+    return arr;
+  }
+
+  function warnPlaceholder(field, input, text, reset) {
+    input.placeholder = text;
+    field.classList.add('warn');
+    clearTimeout(field._wt);
+    field._wt = setTimeout(function () { field.classList.remove('warn'); reset(); }, 1400);
+  }
+
+  /* ---------- tabs ---------- */
+  var seg = $('#seg');
+  var tabBtns = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var panels = { recall: $('#tab-recall'), learn: $('#tab-learn'), view: $('#tab-view') };
+  var order = ['recall', 'learn', 'view'];
+  function show(name, focus) {
+    order.forEach(function (n, i) {
+      var on = n === name;
+      panels[n].hidden = !on;
+      tabBtns[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      if (on) seg.setAttribute('data-i', String(i));
+    });
+    if (focus && name === 'recall') rInput.focus({ preventScroll: true });
+    if (focus && name === 'learn' && L.phase === 'recall' && !lBlock.hidden) lInput.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }
+  tabBtns.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.tab, true); }); });
+
+  /* ---------- RECALL ---------- */
+  var rInput = $('#rInput'), rField = $('#rField'), rChunks = $('#rChunks'), rSheet = $('#rSheet');
+  var rDone = $('#rDone'), rLive = $('#rLive');
+  var R = { n: 0, slips: 0, best: Number(store.get('pirecall.best', 0)) || 0, chunks: [], next: null };
+
+  function fmt(n) { return n.toLocaleString(); }
+  function rStats() {
+    $('#rDigits').textContent = fmt(R.n);
+    $('#rSlips').textContent = fmt(R.slips);
+    $('#rSlips').classList.toggle('bad', R.slips > 0);
+    $('#rBest').textContent = fmt(R.best);
+  }
+  function rPlaceholder() { rInput.placeholder = R.n >= N ? 'All done' : 'Digit ' + (R.n + 1); }
+  function rEnsure(i) {
+    if (R.chunks[i]) return;
+    var el = document.createElement('div'); el.className = 'chunk';
+    var lab = document.createElement('div'); lab.className = 'chunk-label';
+    lab.textContent = (i * 10 + 1) + '–' + (i * 10 + 10);
+    var row = document.createElement('div'); row.className = 'cells';
+    var cells = makeCells(row, 10);
+    el.appendChild(lab); el.appendChild(row);
+    rChunks.appendChild(el);
+    R.chunks[i] = { el: el, cells: cells };
+  }
+  function rMark() {
+    if (R.next) R.next.classList.remove('next');
+    R.next = null;
+    if (R.n < N) {
+      R.next = R.chunks[Math.floor(R.n / 10)].cells[R.n % 10];
+      R.next.classList.add('next');
+    }
+  }
+  function rStart() {
+    R.n = 0; R.slips = 0; R.chunks = []; R.next = null;
+    rChunks.textContent = '';
+    rDone.hidden = true;
+    rEnsure(0); rMark(); rStats(); rPlaceholder();
+    rField.classList.remove('warn');
+  }
+  function rAccept(ch) {
+    var i = Math.floor(R.n / 10), j = R.n % 10;
+    var c = R.chunks[i], cell = c.cells[j];
+    cell.textContent = ch;
+    cell.classList.remove('next');
+    cell.classList.add('on', 'pop');
+    R.n++;
+    if (R.n > R.best) { R.best = R.n; store.set('pirecall.best', R.best); }
+    if (R.n % 10 === 0) { c.el.classList.add('done'); if (R.n < N) rEnsure(i + 1); }
+    rMark(); rStats(); rPlaceholder();
+    if (R.n >= N) { rDone.hidden = false; rInput.blur(); }
+    else if (R.next) R.next.closest('.chunk').scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+  function rReject() {
+    R.slips++;
+    rStats();
+    flash(rField); flash(R.next); buzz();
+    warnPlaceholder(rField, rInput, 'Not that one. Try digit ' + (R.n + 1) + ' again', rPlaceholder);
+    rLive.textContent = 'Wrong digit. Try digit ' + (R.n + 1) + ' again.';
+  }
+  bindDigits(rInput, {
+    expected: function () { return R.n < N ? PI.charAt(R.n) : null; },
+    accept: rAccept,
+    reject: rReject
+  });
+  rSheet.addEventListener('click', function () { rInput.focus({ preventScroll: true }); });
+  $('#rReset').addEventListener('click', function () { rStart(); rInput.focus({ preventScroll: true }); window.scrollTo(0, 0); });
+
+  /* ---------- LEARN ---------- */
+  var lGrid = $('#lGrid'), lBlock = $('#lBlock'), lBlocks = $('#lBlocks');
+  var lCells = $('#lCells'), lHint = $('#lHint'), lActions = $('#lActions');
+  var lField = $('#lField'), lInput = $('#lInput'), lCard = $('#lCard'), lLive = $('#lLive');
+  var learned = new Set((store.get('pirecall.learned', []) || []).filter(function (b) { return b >= 0 && b < BLOCKS; }));
+  var L = { block: -1, phase: 'study', n: 0, cells: [] };
+
+  function renderBlocks() {
+    lBlocks.textContent = '';
+    for (var b = 0; b < BLOCKS; b++) {
+      (function (b) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'blk' + (learned.has(b) ? ' learned' : '');
+        btn.textContent = (b * 10 + 1) + '–' + (b * 10 + 10);
+        btn.setAttribute('aria-label', 'Digits ' + (b * 10 + 1) + ' to ' + (b * 10 + 10) + (learned.has(b) ? ', learned' : ''));
+        btn.addEventListener('click', function () { openBlock(b); });
+        lBlocks.appendChild(btn);
+      })(b);
+    }
+    $('#lCount').textContent = learned.size + ' of ' + BLOCKS + ' blocks learned';
+    $('#lBar').style.width = (learned.size / BLOCKS * 100) + '%';
+  }
+  function slice() { return PI.substr(L.block * 10, 10); }
+  function addAction(label, cls, fn) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'btn ' + cls; b.textContent = label;
+    b.addEventListener('click', fn);
+    lActions.appendChild(b);
+  }
+  function lPlaceholder() { lInput.placeholder = 'Digit ' + (L.block * 10 + L.n + 1); }
+  function lMark() {
+    L.cells.forEach(function (c) { c.classList.remove('next'); });
+    if (L.phase === 'recall' && L.n < 10) L.cells[L.n].classList.add('next');
+  }
+  function setPhase(p) {
+    L.phase = p; L.n = 0;
+    var s = slice(), a = L.block * 10 + 1, z = L.block * 10 + 10;
+    lCard.setAttribute('data-phase', p);
+    lCells.classList.remove('peek');
+    $('#lPhase').textContent = p === 'study' ? 'Study' : p === 'recall' ? 'Recall' : 'Learned';
+    L.cells.forEach(function (c, i) {
+      c.className = 'cell'; c.textContent = ''; c.dataset.a = s.charAt(i);
+      if (p !== 'recall') { c.textContent = s.charAt(i); c.classList.add('on'); }
+    });
+    lActions.textContent = '';
+    lField.hidden = p !== 'recall';
+    if (p === 'study') {
+      lHint.textContent = 'Say it out loud a few times. When it feels solid, hide it.';
+      addAction('Hide and recall', 'primary', function () { setPhase('recall'); lInput.focus({ preventScroll: true }); });
+    } else if (p === 'recall') {
+      lHint.textContent = 'Type the ten digits from memory. Wrong ones are refused.';
+      $('#lPrefix').textContent = a + '–' + z;
+      lPlaceholder(); lMark();
+      lField.classList.remove('warn');
+      addAction('Peek', '', function () {
+        lCells.classList.add('peek');
+        clearTimeout(lCells._pt);
+        lCells._pt = setTimeout(function () { lCells.classList.remove('peek'); }, 1800);
+        lInput.focus({ preventScroll: true });
+      });
+      addAction('Study again', '', function () { setPhase('study'); });
+    } else {
+      lHint.textContent = 'Digits ' + a + ' to ' + z + ' are learned.';
+      learned.add(L.block); store.set('pirecall.learned', Array.from(learned));
+      if (L.block + 1 < BLOCKS) addAction('Next block', 'primary', function () { openBlock(L.block + 1); });
+      addAction('Go again', L.block + 1 < BLOCKS ? '' : 'primary', function () { setPhase('recall'); lInput.focus({ preventScroll: true }); });
+      addAction('All blocks', '', closeBlock);
+    }
+  }
+  function openBlock(b) {
+    L.block = b;
+    lGrid.hidden = true; lBlock.hidden = false;
+    $('#lRange').textContent = (b * 10 + 1) + '–' + (b * 10 + 10);
+    lCells.textContent = '';
+    L.cells = [];
+    for (var g = 0; g < 2; g++) {
+      var grp = document.createElement('div'); grp.className = 'grp';
+      L.cells = L.cells.concat(makeCells(grp, 5));
+      lCells.appendChild(grp);
+    }
+    setPhase('study');
+    window.scrollTo(0, 0);
+  }
+  function closeBlock() {
+    lBlock.hidden = true; lGrid.hidden = false;
+    renderBlocks();
+    window.scrollTo(0, 0);
+  }
+  $('#lBack').addEventListener('click', closeBlock);
+  bindDigits(lInput, {
+    expected: function () { return (L.phase === 'recall' && L.n < 10) ? PI.charAt(L.block * 10 + L.n) : null; },
+    accept: function (ch) {
+      var cell = L.cells[L.n];
+      cell.textContent = ch; cell.classList.remove('next'); cell.classList.add('on', 'pop');
+      L.n++;
+      lPlaceholder(); lMark();
+      if (L.n >= 10) { lInput.blur(); setTimeout(function () { setPhase('done'); }, 260); }
+    },
+    reject: function () {
+      flash(lField); flash(L.cells[L.n]); buzz();
+      warnPlaceholder(lField, lInput, 'Not that one. Try digit ' + (L.block * 10 + L.n + 1) + ' again', lPlaceholder);
+      lLive.textContent = 'Wrong digit. Try again.';
+    }
+  });
+  lCard.addEventListener('click', function (e) {
+    if (L.phase === 'recall' && !e.target.closest('button')) lInput.focus({ preventScroll: true });
+  });
+
+  /* ---------- VIEW ---------- */
+  var vSheet = $('#vSheet'), vMode = 'chunks';
+  function renderView() {
+    var h = '<div class="lead"><span class="three">3.</span><span class="note">Digits after the point</span></div>';
+    if (vMode === 'chunks') {
+      h += '<div class="vgrid">';
+      for (var i = 0; i < BLOCKS; i++) {
+        h += '<div><div class="vlabel">' + (i * 10 + 1) + '–' + (i * 10 + 10) + '</div><div class="vdigits">' + PI.substr(i * 10, 10) + '</div></div>';
+      }
+      h += '</div>';
+    } else {
+      h += '<p class="flow"><span class="three">3.</span>' + PI + '</p>';
+    }
+    vSheet.innerHTML = h;
+    $('#vChunks').setAttribute('aria-pressed', vMode === 'chunks' ? 'true' : 'false');
+    $('#vFlow').setAttribute('aria-pressed', vMode === 'flow' ? 'true' : 'false');
+  }
+  $('#vChunks').addEventListener('click', function () { vMode = 'chunks'; renderView(); });
+  $('#vFlow').addEventListener('click', function () { vMode = 'flow'; renderView(); });
+
+  /* ---------- boot ---------- */
+  rStart();
+  renderBlocks();
+  renderView();
+})();
+</script>
+
+</body></html>
