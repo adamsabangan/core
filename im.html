@@ -1,0 +1,338 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Clerkship Countdown</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@200;300;400;500;600&display=swap">
+<style>
+  /* Layout: left-aligned editorial headline, four glass tiles, then a live ECG strip
+     whose R-spike lands exactly on each tick of the seconds tile. */
+  :root {
+    --bg: #07090f;
+    --ink: #eef1f7;
+    --muted: #8d94aa;
+    --line: rgba(190, 205, 255, 0.10);
+    --glass: rgba(255, 255, 255, 0.04);
+    --accent: #ff5f73;
+    --accent-2: #ffb08a;
+    --cool: #6ee7d8;
+    --beat: 0;
+    --display: "Instrument Serif", "Times New Roman", serif;
+    --sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { min-height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0;
+    overflow-x: hidden;
+  }
+
+  /* ---------- atmosphere ---------- */
+  .bg { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; will-change: transform; }
+  .orb.a { width: 52vmax; height: 52vmax; left: -14vmax; top: -22vmax;
+           background: radial-gradient(circle, #ff5f73 0%, rgba(255,95,115,0) 68%);
+           animation: driftA 26s ease-in-out infinite alternate; }
+  .orb.b { width: 46vmax; height: 46vmax; right: -16vmax; top: 6vmax;
+           background: radial-gradient(circle, #5a4bff 0%, rgba(90,75,255,0) 68%); opacity: .45;
+           animation: driftB 32s ease-in-out infinite alternate; }
+  .orb.c { width: 40vmax; height: 40vmax; left: 20vw; bottom: -26vmax;
+           background: radial-gradient(circle, #19c3b4 0%, rgba(25,195,180,0) 68%); opacity: .32;
+           animation: driftC 29s ease-in-out infinite alternate; }
+  @keyframes driftA { to { transform: translate(8vmax, 6vmax) scale(1.12); } }
+  @keyframes driftB { to { transform: translate(-7vmax, 9vmax) scale(.92); } }
+  @keyframes driftC { to { transform: translate(6vmax, -7vmax) scale(1.15); } }
+  .grain {
+    position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .vignette { position: absolute; inset: 0;
+    background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgba(4,5,10,.75) 100%); }
+
+  /* ---------- page ---------- */
+  .page {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 1180px; margin: 0 auto;
+    min-height: 100vh; min-height: 100dvh;
+    display: flex; flex-direction: column;
+    padding-block: clamp(24px, 5vw, 48px) 0;
+  }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px; align-self: flex-start;
+    padding: 8px 14px 8px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--glass);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  }
+  .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 calc(6px + 12px * var(--beat)) rgba(255, 95, 115, calc(.5 + .5 * var(--beat)));
+    transform: scale(calc(1 + .5 * var(--beat))); }
+
+  .hero { padding-block: clamp(36px, 8vw, 88px) clamp(28px, 5vw, 52px); }
+  h1 {
+    margin: 0; font-family: var(--display); font-weight: 400;
+    font-size: clamp(40px, 8.2vw, 104px); line-height: .98; letter-spacing: -.02em;
+    max-width: 12.5em; text-wrap: balance;
+  }
+  h1 .dim { color: rgba(238, 241, 247, .55); }
+  h1 em {
+    font-style: italic; padding-right: .06em;
+    background: linear-gradient(95deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* ---------- tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 20px); margin: 0; padding: 0; list-style: none; }
+  .tile {
+    position: relative; min-width: 0;
+    display: flex; flex-direction: column; justify-content: space-between; gap: clamp(18px, 3vw, 36px);
+    padding: clamp(16px, 2.4vw, 28px);
+    border-radius: 24px; border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.02) 55%);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 30px 60px -30px rgba(0,0,0,.7);
+    overflow: hidden;
+  }
+  .tile::after { /* soft light from the top edge */
+    content: ""; position: absolute; left: 12%; right: 12%; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent); opacity: .55;
+  }
+  .tile .label {
+    font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .tile .num {
+    font-weight: 200; line-height: .9; letter-spacing: -.045em;
+    font-size: clamp(54px, 10.6vw, 148px);
+    font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+    background: linear-gradient(180deg, #ffffff 10%, #aab2cc 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    display: inline-block;
+  }
+  .tile .num.flip { animation: flip .5s cubic-bezier(.2,.7,.2,1); }
+  @keyframes flip { from { transform: translateY(-10%); opacity: .25; } to { transform: none; opacity: 1; } }
+
+  .tile.sec {
+    border-color: rgba(255, 95, 115, calc(.14 + .45 * var(--beat)));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 30px 60px -30px rgba(0,0,0,.7),
+                0 0 calc(70px * var(--beat)) rgba(255, 95, 115, calc(.28 * var(--beat)));
+  }
+  .tile.sec .label::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    opacity: calc(.35 + .65 * var(--beat)); }
+
+  /* ---------- ECG strip ---------- */
+  .ecg {
+    position: relative; margin-top: auto; padding-top: clamp(28px, 5vw, 56px);
+    height: clamp(190px, 26vw, 260px);
+    margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  }
+  .ecg .paper {
+    position: absolute; inset: clamp(28px, 5vw, 56px) 0 0 0;
+    background-image:
+      linear-gradient(rgba(255,95,115,.13) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,95,115,.13) 1px, transparent 1px),
+      linear-gradient(rgba(255,95,115,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,95,115,.05) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+    -webkit-mask-image: radial-gradient(70% 90% at 60% 55%, #000 10%, transparent 75%);
+            mask-image: radial-gradient(70% 90% at 60% 55%, #000 10%, transparent 75%);
+  }
+  .ecg canvas { position: absolute; left: 0; bottom: 0; width: 100%; height: calc(100% - clamp(28px, 5vw, 56px) + 24px); display: block; }
+
+  footer {
+    position: relative; z-index: 2;
+    display: flex; flex-wrap: wrap; gap: 6px 28px; justify-content: space-between; align-items: baseline;
+    padding-block: 18px max(22px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); letter-spacing: .01em;
+  }
+  footer b { color: var(--ink); font-weight: 500; }
+  footer .local[hidden] { display: none; }
+
+  /* ---------- finished ---------- */
+  body.done .tile .num { background: linear-gradient(180deg, #fff, var(--accent-2)); -webkit-background-clip: text; background-clip: text; }
+
+  /* ---------- small screens ---------- */
+  @media (max-width: 720px) {
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tile { border-radius: 20px; }
+    .tile .num { font-size: clamp(64px, 24vw, 120px); }
+    .hero { padding-top: 40px; }
+  }
+  :focus-visible { outline: 2px solid var(--cool); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    .orb { animation: none; }
+    .tile .num.flip { animation: none; }
+  }
+</style>
+
+<div class="bg" aria-hidden="true">
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+  <div class="vignette"></div><div class="grain"></div>
+</div>
+
+<main class="page">
+  <div class="eyebrow"><span class="pulse-dot"></span>Internal Medicine Clerkship</div>
+
+  <section class="hero">
+    <h1 id="headline"><span class="dim">Until the end of</span> <em>internal medicine</em> clerkship</h1>
+  </section>
+
+  <ul class="tiles" role="timer" aria-label="Time remaining until the end of the internal medicine clerkship">
+    <li class="tile"><span class="label">Days</span><span class="num" id="d">--</span></li>
+    <li class="tile"><span class="label">Hours</span><span class="num" id="h">--</span></li>
+    <li class="tile"><span class="label">Minutes</span><span class="num" id="m">--</span></li>
+    <li class="tile sec"><span class="label">Seconds</span><span class="num" id="s">--</span></li>
+  </ul>
+
+  <div class="ecg" aria-hidden="true">
+    <div class="paper"></div>
+    <canvas id="ecg"></canvas>
+  </div>
+
+  <footer>
+    <span><b>Friday, December 18, 2026</b> &middot; 12:00 PM PST</span>
+    <span class="local" id="local" hidden></span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  // 12:00 PM PST (UTC-8) on Dec 18, 2026 = 20:00 UTC
+  var TARGET = Date.UTC(2026, 11, 18, 20, 0, 0);
+  var root = document.documentElement;
+  var els = { d: document.getElementById('d'), h: document.getElementById('h'),
+              m: document.getElementById('m'), s: document.getElementById('s') };
+  var last = { d: null, h: null, m: null, s: null };
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+  function setVal(key, val) {
+    if (last[key] === val) return;
+    last[key] = val;
+    var el = els[key];
+    el.textContent = val;
+    if (!reduce && el.dataset.ready) {
+      el.classList.remove('flip'); void el.offsetWidth; el.classList.add('flip');
+    }
+    el.dataset.ready = '1';
+  }
+
+  // local time line
+  try {
+    var d = new Date(TARGET);
+    if (d.getTimezoneOffset() !== 480) {
+      var fmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+      var local = document.getElementById('local');
+      local.innerHTML = 'In your time zone &middot; <b>' + fmt.format(d) + '</b>';
+      local.hidden = false;
+    }
+  } catch (e) {}
+
+  // ---------- ECG ----------
+  // One beat per second. Phase p = 0 is the R spike, which lands on every seconds tick.
+  function g(p, c, w) { var x = p - c; x -= Math.round(x); return Math.exp(-(x * x) / (2 * w * w)); }
+  function beat(p) {
+    return 0.13 * g(p, -0.15, 0.028)    // P
+         - 0.14 * g(p, -0.030, 0.010)   // Q
+         + 1.00 * g(p, 0, 0.0105)       // R
+         - 0.30 * g(p, 0.034, 0.013)    // S
+         + 0.28 * g(p, 0.28, 0.045);    // T
+  }
+  function phaseAt(t) { return ((((t - TARGET) % 1000) + 1000) % 1000) / 1000; }
+
+  var canvas = document.getElementById('ecg');
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  var finished = false;
+  function drawEcg(now) {
+    ctx.clearRect(0, 0, W, H);
+    var headX = W * 0.8;
+    var secsVisible = W < 600 ? 3 : 4.5;
+    var pxPerSec = headX / secsVisible;
+    var base = H * 0.64, amp = H * 0.46;
+    var step = 1.5;
+    var grad = ctx.createLinearGradient(0, 0, headX, 0);
+    grad.addColorStop(0, 'rgba(255,95,115,0)');
+    grad.addColorStop(0.55, 'rgba(255,95,115,0.55)');
+    grad.addColorStop(1, 'rgba(255,190,170,1)');
+
+    ctx.beginPath();
+    for (var x = 0; x <= headX; x += step) {
+      var tau = (headX - x) / pxPerSec * 1000;
+      var y = base - amp * beat(phaseAt(now - tau));
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = grad;
+    ctx.shadowColor = 'rgba(255,95,115,.9)'; ctx.shadowBlur = 14; ctx.lineWidth = 2.2;
+    ctx.stroke();
+    ctx.shadowBlur = 0; ctx.lineWidth = 1.4; ctx.stroke();
+
+    // quiet baseline ahead of the sweep
+    ctx.beginPath(); ctx.moveTo(headX, base); ctx.lineTo(W, base);
+    ctx.strokeStyle = 'rgba(255,95,115,.14)'; ctx.lineWidth = 1; ctx.setLineDash([2, 6]); ctx.stroke(); ctx.setLineDash([]);
+
+    // head
+    var hy = base - amp * beat(phaseAt(now));
+    ctx.beginPath(); ctx.arc(headX, hy, 3.4, 0, 6.2832);
+    ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(255,120,140,1)'; ctx.shadowBlur = 18; ctx.fill(); ctx.shadowBlur = 0;
+  }
+
+  // ---------- main loop ----------
+  function frame() {
+    var now = Date.now();
+    var rem = TARGET - now;
+    if (rem <= 0) {
+      if (!finished) {
+        finished = true;
+        document.body.classList.add('done');
+        document.getElementById('headline').innerHTML = '<span class="dim">Internal medicine clerkship is</span> <em>complete.</em>';
+      }
+      setVal('d', '00'); setVal('h', '00'); setVal('m', '00'); setVal('s', '00');
+    } else {
+      var total = Math.floor(rem / 1000);
+      setVal('d', pad(Math.floor(total / 86400)));
+      setVal('h', pad(Math.floor(total % 86400 / 3600)));
+      setVal('m', pad(Math.floor(total % 3600 / 60)));
+      setVal('s', pad(total % 60));
+    }
+    // beat envelope: spikes at each tick, decays over ~400ms
+    var p = phaseAt(now);
+    root.style.setProperty('--beat', Math.exp(-p * 7).toFixed(3));
+    drawEcg(now);
+  }
+
+  resize();
+  window.addEventListener('resize', function () { resize(); frame(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { resize(); frame(); });
+
+  if (reduce) {
+    frame(); setInterval(frame, 1000);
+  } else {
+    (function loop() { frame(); requestAnimationFrame(loop); })();
+  }
+})();
+</script>
+
+</body></html>
